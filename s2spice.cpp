@@ -211,6 +211,12 @@ void MyFrame::OnQuit(wxCommandEvent& event) {
 
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
+  if (numPorts < 1) {
+    wxString mess = wxString::Format(
+        _("No data. Please open SnP file then make LIB."));
+    wxLogError(mess);
+    return;
+  }
 
   wxBusyCursor wait;
   wxFileName libFile = snp_file;
@@ -524,13 +530,6 @@ vector<string> MyFrame::Symbol(const string& symname) const
 }
 
 bool MyFrame::WriteLIB(const wxFileName& lib_file) {
-  if (numPorts < 1) {
-    wxString mess = wxString::Format(
-        _("No data. Please open SnP file then make LIB."));
-    wxLogError(mess);
-    return false;
-  }
-
   string libName(lib_file.GetFullPath().ToStdString());
 
   ofstream output_stream(libName);
