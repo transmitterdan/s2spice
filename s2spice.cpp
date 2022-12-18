@@ -158,6 +158,10 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   menuFile->Append(ID_OPEN, "&Open...\tCtrl-O",
                    "Open SnP file");
   menuFile->AppendSeparator();
+  menuFile->Append(ID_MKLIB, "&Save LIB...\tCtrl-L",
+                   "Save Library file");
+  menuFile->Append(ID_MKSYM, "&Save ASY...\tCtrl-L",
+                   "Save Symbol file");
   menuFile->Append(wxID_EXIT);
 
   auto menuHelp = new wxMenu();
