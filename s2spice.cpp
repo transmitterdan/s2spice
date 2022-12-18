@@ -524,9 +524,9 @@ vector<string> MyFrame::Symbol(const string& symname) const
 }
 
 bool MyFrame::WriteLIB(const wxFileName& lib_file) {
-  wxString libName(lib_file.GetFullPath());
+  string libName(lib_file.GetFullPath().ToStdString());
 
-  ofstream output_stream(libName.c_str());
+  ofstream output_stream(libName);
   if (!output_stream) {
     wxLogError("Cannot create file '%s'.", libName);
     return false;
