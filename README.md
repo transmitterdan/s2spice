@@ -36,3 +36,26 @@ the S-Parameter file.
 ## Quit
 
 Exit the program.
+
+### Building for Windows
+Windows dependencies:
+    wxbase32u_vc.dll
+    wxmsw32u_core_vc.dll
+    MSVCP140.dll
+    VCRUNTIME140.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-filesystem-l1-1-0.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+
+Release build using MSVC:
+```
+cd build
+cmake .. -G "Visual Studio 17 2022" -AWIN32 -DWX_LIB_DIR="%wxWidgets_LIB_DIR%" && cmake --build . --config Release
+copy "C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x86\*.*" Release
+copy \oa\wxWidgets\lib\vc143_dll\wxmsw32u_core_vc.dll Release
+copy \oa\wxWidgets\lib\vc143_dll\wxbase32u_vc.dll Release
+```

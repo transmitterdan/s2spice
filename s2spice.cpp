@@ -125,9 +125,7 @@ private:
     ID_MKSYM,
 
     // The ID of the "Quit" button
-    ID_QUIT,
-
-    ID_HELLO
+    ID_QUIT
   };
 };
 // This is the event table for the program
@@ -157,8 +155,8 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   numPorts = 0;
 
   auto menuFile = new wxMenu();
-  menuFile->Append(ID_HELLO, "&Hello...\tCtrl-H",
-                   "Help string shown in status bar for this menu item");
+  menuFile->Append(ID_OPEN, "&Open...\tCtrl-O",
+                   "Open SnP file");
   menuFile->AppendSeparator();
   menuFile->Append(wxID_EXIT);
 
@@ -171,15 +169,16 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   SetMenuBar(menuBar);
 
   CreateStatusBar();
-  SetStatusText("S2spice: Convert Touchstone files to LTspice subcircuit.");
+  SetStatusText("S2spice: Use OPEN to convert Touchstone files to LTspice subcircuit.");
 
   menuBar->Bind(wxEVT_MENU, [&](wxCommandEvent& event) {
-    if (event.GetId() == ID_HELLO)
-      wxLogMessage("Hello world from S2Spice!");
+    if (event.GetId() == ID_OPEN)
+      OnOpen(event);
     else if (event.GetId() == wxID_ABOUT)
       wxMessageBox(
-          "Utility to convert Touchstone (aka SnP files) into LTspice "
-          "subcircuit file",
+          "Utility to convert Touchstone (aka SnP files) into LTspice\n"
+          "subcircuit file. Open .SnP file, then use buttons to create\n"
+          " LIB and ASY files.",
           "About S2spice", wxOK | wxICON_INFORMATION);
     else if (event.GetId() == wxID_EXIT)
       Close(true);
