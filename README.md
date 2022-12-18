@@ -39,7 +39,7 @@ Exit the program.
 ![LTspice schematic](Test/Screenshot%206.png)
 
 ## Installation (Windows)
-Download the .zip file https://drive.google.com/drive/folders/1hLxZrKhTEtQZL3pZYlYceXNaVIkQdTo7?usp=sharing
+Download the .zip file https://drive.google.com/file/d/1B4nMLFFSjssAPiJLtuuhsTYb2SGO_Ivc/view
 
 Unzip the file into a folder called s2spice.
 
