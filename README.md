@@ -49,6 +49,7 @@ del CMakeCache.txt
 cmake .. -G "Visual Studio 17 2022" -AWIN32 -DWX_LIB_DIR="%wxWidgets_LIB_DIR%" && cmake --build . --config Release
 ```
 Windows dependencies:
+```
     wxbase32u_vc.dll
     wxmsw32u_core_vc.dll
     MSVCP140.dll
@@ -60,4 +61,4 @@ Windows dependencies:
     api-ms-win-crt-convert-l1-1-0.dll
     api-ms-win-crt-math-l1-1-0.dll
     api-ms-win-crt-locale-l1-1-0.dll
-
+```
