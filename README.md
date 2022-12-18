@@ -37,6 +37,27 @@ the S-Parameter file.
 
 Exit the program.
 
+### Examples provided
+
+## Windows 
+
+C:\>cd s2spice\Test & rem go to the test folder under s2spice
+C:\s2spice\Test>..\s2spice
+
+### Building for Linux
+Release build on debian like (e.g. Ubuntu):
+
+sudo apt update
+sudo apt install libwxbase3.0-dev  ; or whatever is latest version of wxWidgets
+git clone https://github.com/transmitterdan/s2spice.git
+git clone https://github.com/libigl/eigen.git
+cd s2spice
+mkdir build
+cd build
+cmake ..
+cmake --build .
+
+
 ### Building for Windows
 Release build using MSVC:
 This program uses DLLs from the Visual C redistributable from Microsoft as well as wxWidgets DLLs.  Below are hints to copy these to the runtime folder.
