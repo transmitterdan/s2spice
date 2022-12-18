@@ -48,11 +48,13 @@
 #include <string>
 #include <utility>
 
+using namespace std;
+
 #define MAX_PORTS 99  // maximum number of ports we will handle
 
 struct Sparam {
   double Freq;
-  Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> S;
+  Eigen::Matrix<complex<double>, Eigen::Dynamic, Eigen::Dynamic> S;
 };
 
 // This is the main class for the program
@@ -66,36 +68,40 @@ class MyFrame : public wxFrame {
 public:
   MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
   int nFreq(void) { return SData.size(); }
+  int nPorts(void) { return numPorts; }
 
 private:
-  std::string data_strings;       // String array of data from SnP file
+  string data_strings;       // String array of data from SnP file
   wxArrayString comment_strings;  // String array of comments from SnP file
   wxArrayString option_string;    // meta data strings
   bool data_saved;                // have we saved in imported S-parameter file
-  int nPorts;           // number of ports in this file (comes from file name)
+  int numPorts;           // number of ports in this file (comes from file name)
   wxFileName snp_file;  // file that is currently loaded
   double fUnits;        // frequency units
   double Z0;            // reference Z
   wxString format;      // data format (DB, MA or RI)
   wxString parameter;   // type of parameter (S is the only allowed type)
-  std::vector<Sparam> SData;
+  vector<Sparam> SData;
+
   // This function is called when the "Open" button is clicked
   void OnOpen(wxCommandEvent& event);
 
   // This function is called when the "Read" button is clicked
   void OnMkLIB(wxCommandEvent& event);
 
-  // This function is called when the "Plot" button is clicked
-  void OnPlot(wxCommandEvent& event);
+  // This function is called when the "Symbol" button is clicked
+  void OnMkASY(wxCommandEvent& event);
 
   // This function is called when the "Quit" button is clicked
   void OnQuit(wxCommandEvent& event);
 
   // This function reads the contents of the file into a vector of points
-  std::vector<std::pair<double, double>> ReadFile(const std::string& fileName);
+  vector<pair<double, double>> ReadFile(const string& fileName);
 
-  // This function plots the given data in a new window
-  void PlotData(const std::vector<std::pair<double, double>>& data);
+  // This function creates a string vector describing a LTspice symbol
+  vector<string> Symbol(const string& symname) const;
+  vector<string> Symbol1port(const string& symname) const;
+  vector<string> Symbol2port(const string& symname) const;
 
   // Convert text to S-parameters
   void Convert2S();
@@ -105,11 +111,11 @@ private:
     // The ID of the "Open" button
     ID_OPEN = 1,
 
-    // The ID of the "Read" button
+    // The ID of the "LIB" button
     ID_MKLIB,
 
-    // The ID of the "Plot" button
-    ID_PLOT,
+    // The ID of the "SYM" button
+    ID_MKSYM,
 
     // The ID of the "Quit" button
     ID_QUIT,
@@ -118,9 +124,12 @@ private:
   };
 };
 // This is the event table for the program
-wxBEGIN_EVENT_TABLE(MyFrame, wxFrame) EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
-    EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB) EVT_BUTTON(ID_PLOT, MyFrame::OnPlot)
-        EVT_BUTTON(ID_QUIT, MyFrame::OnQuit) wxEND_EVENT_TABLE()
+wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
+  EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
+  EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
+  EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
+  EVT_BUTTON(ID_QUIT, MyFrame::OnQuit)
+wxEND_EVENT_TABLE()
 
     // This is the main entry point for the program
     wxIMPLEMENT_APP(MyApp);
@@ -137,7 +146,8 @@ bool MyApp::OnInit() {
 // This is the implementation of the MyFrame class
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
-  data_saved = true;
+  data_saved = false;
+  numPorts = 0;
 
   auto menuFile = new wxMenu();
   menuFile->Append(ID_HELLO, "&Hello...\tCtrl-H",
@@ -177,9 +187,9 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   wxButton* libButton = new wxButton(this, ID_MKLIB, "Make LIB",
                                      wxPoint(100, 10), wxSize(80, 30));
 
-  // Create the "Plot" button
-  wxButton* plotButton =
-      new wxButton(this, ID_PLOT, "Plot", wxPoint(190, 10), wxSize(80, 30));
+  // Create the "Symbol" button
+  wxButton* symButton =
+      new wxButton(this, ID_MKSYM, "Make SYM", wxPoint(190, 10), wxSize(80, 30));
 
   // Create the "Quit" button
   wxButton* quitButton =
@@ -201,14 +211,15 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
 
   wxBusyCursor wait;
 
-  std::ofstream output_stream(libName.c_str());
+  ofstream output_stream(libName.c_str());
   if (!output_stream) {
     wxLogError("Cannot create file '%s'.", libName);
     return;
   }
   output_stream << ".SUBCKT " << lib_file.GetName() << " ";
-  for (int i = 0; i < nPorts + 1; i++) output_stream << " " << i + 1;
+  for (int i = 0; i < numPorts + 1; i++) output_stream << " " << i + 1;
   output_stream << "\n";
+  output_stream << "* Pin " << numPorts+1 << " is the reference plane (usually it should be connected to GND)\n";
 
   for (int i = 0; i < comment_strings.Count(); i++) {
     output_stream << "*" << comment_strings[i].Mid(1) << "\n";
@@ -216,14 +227,14 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   output_stream << "*" << option_string[0].Mid(1) << "\n";
   output_stream << "*";
 
-  for (int i = 0; i < nPorts; i++) {
+  for (int i = 0; i < numPorts; i++) {
     output_stream << " Z" << i + 1 << " = " << Z0;
   }
   output_stream << "\n";
 
   /* define resistances for Spice model */
 
-  for (int i = 0; i < nPorts; i++) {
+  for (int i = 0; i < numPorts; i++) {
     output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
                                        10 * (i + 1), -Z0)
                           .c_str());
@@ -232,17 +243,17 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   }
   output_stream << "\n";
   char* out = new char[2049];
-  for (int i = 0; i < nPorts; i++) {
-    for (int j = 0; j < nPorts; j++) {
+  for (int i = 0; i < numPorts; i++) {
+    for (int j = 0; j < numPorts; j++) {
       snprintf(out, 2048, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
       output_stream << out;
-      if (j + 1 == nPorts) {
+      if (j + 1 == numPorts) {
         snprintf(out, 2048, "E%d%d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
-                 i + 1, j + 1, nPorts + 1, 10 * (j + 1), nPorts + 1);
+                 i + 1, j + 1, numPorts + 1, 10 * (j + 1), numPorts + 1);
         output_stream << out;
       } else {
         snprintf(out, 2048, "E%d%d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, i + 1, j + 1, i + 1, j + 2, 10 * (j + 1), nPorts + 1);
+                 j + 1, i + 1, j + 1, i + 1, j + 2, 10 * (j + 1), numPorts + 1);
         output_stream << out;
       }
       double offset = 0;
@@ -270,8 +281,45 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   data_saved = true;
 }
 
-void MyFrame::OnPlot(wxCommandEvent& event) {
-  wxMessageBox("Plot button pressed.");
+void MyFrame::OnMkASY(wxCommandEvent& event) {
+  //  wxMessageBox("Symbol button pressed.");
+  if (numPorts < 1) {
+    wxString mess = wxString::Format(
+        _("No data. Please open SnP file and make LIB first."));
+    wxLogError(mess);
+    return;
+  }
+
+  wxFileName asyFile(snp_file);
+  asyFile.SetExt("asy");
+  if (asyFile.Exists()) {
+    wxString mess = wxString::Format(_("Symbol file '%s' exists. Overwrite?"),
+                                     asyFile.GetFullPath());
+    if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
+                     this) == wxNO)
+      return;
+  }
+
+  wxBusyCursor wait;
+
+  vector<string> sym;
+
+  sym = Symbol(asyFile.GetName().ToStdString());
+
+  if (sym.empty()) {
+    wxLogError("Error creating symbol '%s'.", asyFile.GetName());
+    return;
+  }
+
+  string symName(asyFile.GetFullPath().ToStdString());
+  ofstream output_stream(symName);
+  if (!output_stream) {
+    wxLogError("Cannot create file '%s'.", symName);
+    return;
+  }
+  for (auto i : sym) {
+    output_stream << i << "\n";
+  }
 }
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
@@ -280,7 +328,7 @@ void MyFrame::OnQuit(wxCommandEvent& event) {
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
-  if (data_strings.empty() && !data_saved) {
+  if (!data_strings.empty() && !data_saved) {
     if (wxMessageBox(_("Current content has not been saved! Proceed?"),
                      _("Please confirm"), wxICON_QUESTION | wxYES_NO,
                      this) == wxNO)
@@ -302,11 +350,11 @@ void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
   }
   wxString N(snp_file.GetExt().Mid(1, 1));
   if (N.IsNumber()) {
-    nPorts = atoi(N.ToAscii());
-    if (nPorts < 0 || nPorts > MAX_PORTS) nPorts = 0;
+    numPorts = atoi(N.ToAscii());
+    if (numPorts < 0 || numPorts > MAX_PORTS) numPorts = 0;
   } else
-    nPorts = 0;
-  if (nPorts < 1) {
+    numPorts = 0;
+  if (numPorts < 1) {
     wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
     return;
   }
@@ -371,55 +419,53 @@ void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
   }
 
   Convert2S();
-
   data_saved = false;
   SetStatusText(wxString::Format("S2spice: Data successfully imported from %s.",
                                  snp_file.GetFullPath()));
 }
 
 void MyFrame::Convert2S() {
-  using namespace std;
   Sparam S;
   istringstream iss(data_strings);
   vector<string> tokens{istream_iterator<string>{iss},
                         istream_iterator<string>{}};
   data_strings.clear();
-  int nTokens = nPorts * nPorts * 2 + 1;
+  int nTokens = numPorts * numPorts * 2 + 1;
   int nFreqs = tokens.size();
   string Last = tokens[nFreqs - 1];
   string Next_Last = tokens[nFreqs - 2];
   nFreqs = nFreqs / nTokens;
   SData.clear();
-  S.S.resize(nPorts, nPorts);
+  S.S.resize(numPorts, numPorts);
 
   auto i = tokens.begin();
   while (i != tokens.end()) {
     S.Freq = fUnits * atof(tokens.front().c_str());
     i = tokens.erase(i);
-    for (auto j = 0; j < nPorts; j++) {
-      for (auto k = 0; k < nPorts; k++) {
-        std::complex<double> sValue;
+    for (auto j = 0; j < numPorts; j++) {
+      for (auto k = 0; k < numPorts; k++) {
+        complex<double> sValue;
         if (format == "MA") {
-          double mag = std::stod(tokens.front());
+          double mag = stod(tokens.front());
           i = tokens.erase(i);
-          double angle = std::stod(tokens.front());
+          double angle = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = std::complex(mag * cos(angle * M_PI / 180.0),
+          sValue = complex(mag * cos(angle * M_PI / 180.0),
                                 mag * sin(angle * M_PI / 180.0));
         } else if (format == "DB") {
-          double mag = std::stod(tokens.front());
+          double mag = stod(tokens.front());
           i = tokens.erase(i);
           mag = pow(10.0, mag / 20.0);
-          double angle = std::stod(tokens.front());
+          double angle = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = std::complex(mag * cos(angle * M_PI / 180.0),
+          sValue = complex(mag * cos(angle * M_PI / 180.0),
                                 mag * sin(angle * M_PI / 180.0));
         } else if (format == "RI") {
-          double re = std::stod(tokens.front());
+          double re = stod(tokens.front());
           i = tokens.erase(i);
-          double im = std::stod(tokens.front());
+          double im = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = std::complex(re, im);
+          sValue = complex(re, im);
         } else {
           wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
           return;
@@ -427,7 +473,132 @@ void MyFrame::Convert2S() {
         S.S(j, k) = sValue;
       }
     }
-    if (nPorts == 2) swap(S.S(0, 1), S.S(1, 0));
+    if (numPorts == 2) swap(S.S(0, 1), S.S(1, 0));
     SData.push_back(S);
   }
+}
+
+vector<string> MyFrame::Symbol2port(const string& symname) const
+{
+  vector<string> symbol;
+  symbol.push_back("Version 4");
+  symbol.push_back("SymbolType BLOCK");
+  symbol.push_back("RECTANGLE Normal 48 -32 -48 32");
+  symbol.push_back("TEXT 0 -48 Center 2 " + symname);
+  symbol.push_back("SYMATTR Prefix X");
+  symbol.push_back("SYMATTR SpiceModel " + symname);
+  symbol.push_back("SYMATTR ModelFile " + symname + ".lib");
+  symbol.push_back("PIN -48 0 LEFT 8");
+  symbol.push_back("PINATTR PinName 1");
+  symbol.push_back("PINATTR SpiceOrder 1");
+  symbol.push_back("PIN 48 0 RIGHT 8");
+  symbol.push_back("PINATTR PinName 2");
+  symbol.push_back("PINATTR SpiceOrder 2");
+  symbol.push_back("PIN 0 32 BOTTOM 8");
+  symbol.push_back("PINATTR PinName 3");
+  symbol.push_back("PINATTR SpiceOrder 3");
+  return symbol;
+}
+
+vector<string> MyFrame::Symbol1port(const string& symname) const
+{
+  vector<string> symbol;
+  symbol.push_back("Version 4");
+  symbol.push_back("SymbolType BLOCK");
+  symbol.push_back("RECTANGLE Normal 48 -32 -48 32");
+  symbol.push_back("TEXT 0 -48 Center 2 " + symname);
+  symbol.push_back("SYMATTR Prefix X");
+  symbol.push_back("SYMATTR SpiceModel " + symname);
+  symbol.push_back("SYMATTR ModelFile " + symname + ".lib");
+  symbol.push_back("PIN -48 0 LEFT 8");
+  symbol.push_back("PINATTR PinName 1");
+  symbol.push_back("PINATTR SpiceOrder 1");
+  symbol.push_back("PIN 0 32 BOTTOM 8");
+  symbol.push_back("PINATTR PinName 2");
+  symbol.push_back("PINATTR SpiceOrder 2");
+  return symbol;
+}
+
+vector<string> MyFrame::Symbol(const string& symname) const
+{
+  vector<string> symbol;
+  switch (numPorts)
+  {
+    case 1:
+      symbol = Symbol1port(symname);
+      break;
+    case 2:
+      symbol = Symbol2port(symname);
+      break;
+    default:
+      vector<int> pinsLeft, pinsRight;
+      symbol.push_back("Version 4");
+      symbol.push_back("SymbolType BLOCK");
+      for (int i = 0; i < numPorts; i++)
+      {
+        if (!(i % 2) && pinsLeft.size() < numPorts/2)
+          pinsLeft.push_back(i+1);
+        else
+          pinsRight.push_back(i+1);
+      }
+      int symWidth = 96;
+      int symHeight = max ( pinsLeft.size() * 32, pinsRight.size() * 32 );
+      int xur = symWidth/2;
+      int yur = -32;
+      int yll = yur + symHeight;
+      int xll = xur - symWidth;
+      stringstream ss;
+      ss << "RECTANGLE Normal " << xll << " " << yll << " " << xur << " " << yur;
+      symbol.push_back(ss.str()); ss.str(std::string());
+      symbol.push_back("TEXT 0 -48 Center 2 " + symname);
+      symbol.push_back("SYMATTR Prefix X");
+      symbol.push_back("SYMATTR SpiceModel " + symname);
+      symbol.push_back("SYMATTR ModelFile " + symname + ".lib");
+      // Do the left pins
+      int yPin;
+      int pinName = -1;
+      if (pinsLeft.size() % 2)
+      {
+        yPin = 0;
+      } else
+      {
+        yPin = -16;
+      }
+      for ( auto i: pinsLeft)
+      {
+        ss << "PIN " << xll << " " << yPin << " LEFT 8";
+        symbol.push_back(ss.str()); ss.str(std::string());
+        yPin += 32;
+        ss << "PINATTR PinName " << i;
+        symbol.push_back(ss.str()); ss.str(std::string());
+        ss << "PINATTR SpiceOrder " << i;
+        symbol.push_back(ss.str()); ss.str(std::string());
+      }
+      if (pinsRight.size() % 2)
+      {
+        yPin = 0;
+      } else
+      {
+        yPin = -16;
+      }
+      pinName = 0;
+      for (auto i : pinsRight)
+      {
+        ss << "PIN " << xur << " " << yPin << " RIGHT 8";
+        symbol.push_back(ss.str()); ss.str(std::string());
+        yPin += 32;
+        ss << "PINATTR PinName " << i;
+        symbol.push_back(ss.str()); ss.str(std::string());
+        ss << "PINATTR SpiceOrder " << i;
+        symbol.push_back(ss.str()); ss.str(std::string());
+      }
+      ss << "PIN 0 " << yll << " Bottom 8";
+      symbol.push_back(ss.str()); ss.str(std::string());
+      ss << "PINATTR PinName " << numPorts + 1;
+      symbol.push_back(ss.str()); ss.str(std::string());
+      ss << "PINATTR SpiceOrder " << numPorts + 1;
+      symbol.push_back(ss.str()); ss.str(std::string());
+      break;
+  }
+  return symbol;
 }
