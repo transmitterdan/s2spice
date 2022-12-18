@@ -64,7 +64,12 @@ cmake --build .
 
 ### Building for Windows
 Release build using MSVC:
-This program uses DLLs from the Visual C redistributable from Microsoft as well as wxWidgets DLLs.  Below are hints to copy these files to the Release folder where s2spice.exe is found. You can learn more at https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist and https://www.wxwidgets.org/downloads/
+This program uses DLLs from the Visual C redistributable from Microsoft as well as wxWidgets DLLs.  Here are some hints to copy these files to the Release folder where s2spice.exe is found. You can learn more at
+https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+https://www.wxwidgets.org/downloads/
+
+Install the Microsoft C runtime and wxWidgets libraries from above web sites. Make note where you put the files.
+
 ```
 cd build
 mkdir Release
@@ -72,11 +77,12 @@ copy "C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x86\*.*" Release
 copy \oa\wxWidgets\lib\vc14x_dll\wxmsw32u_core_vc.dll Release
 copy \oa\wxWidgets\lib\vc14x_dll\wxbase32u_vc.dll Release
 del CMakeCache.txt
-cmake .. -G "Visual Studio 17 2022" -AWIN32 -DWX_LIB_DIR="%wxWidgets_LIB_DIR%"
+cmake .. -G "Visual Studio 17 2022" -AWIN32 -DWX_LIB_DIR="\oa\wxWidgets\lib"
 cmake --build . --config Release
 cd ..\Test
 ..\build\Release\s2spice.exe
 ```
+
 Windows dependencies:
 ```
     wxbase32u_vc.dll
