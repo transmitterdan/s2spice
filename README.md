@@ -24,6 +24,13 @@ Converts the file to Spice .SUBCKT format and writes a file with same name as th
 
 Creates a generic LTSpice symbol file that can be used to add the model to a schematic. The pins are evenly divided between left and right sides except for the reference node pin which is on the bottom. You can edit this file in the LTspice symbol editor. The ports are numbered the same as in the S-Parameter file ports with on extra port for the reference node.  Most users will connect that pin to GND (node 0).
 
+## Typical Usage
+
+![LTspice schematic](Test/Screenshot%205.png)
+
+![LTspice schematic](Test/Screenshot%206.png)
+
+
 __DO NOT FORGET TO HOOK UP THE REFERENCE NODE PIN!__
 
 ## Quit
