@@ -35,6 +35,8 @@
 #include <wx/tokenzr.h>
 #endif /* WX_PRECOMP */
 
+using namespace std;
+
 // We use the Eigen template library for 2-D matrices
 #include <Core>
 
@@ -47,8 +49,6 @@
 #include <fstream>
 #include <string>
 #include <utility>
-
-using namespace std;
 
 #define MAX_PORTS 99  // maximum number of ports we will handle
 
