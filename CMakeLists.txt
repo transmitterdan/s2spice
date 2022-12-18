@@ -28,7 +28,7 @@ if (MSVC)
 endif (MSVC)
 
 # Find the wxWidgets library
-# SET(wxWidgets_USE_LIBS base core)
+SET(wxWidgets_USE_LIBS base core)
 find_package(wxWidgets REQUIRED)
 include(${wxWidgets_USE_FILE})
 
