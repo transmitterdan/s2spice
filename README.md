@@ -48,6 +48,8 @@ Now simply press the 'Make LIB' and/or 'Make SYM' buttons to create Spice librar
 
 You can open additional files and create more library files and symbols.
 
+___THE NEXT PART IS FOR EXPERIENCED DEVELOPERS ONLY___
+
 ### Building for Linux
 Release build on debian like (e.g. Ubuntu):
 ```
@@ -68,9 +70,11 @@ This program uses DLLs from the Visual C redistributable from Microsoft as well 
 https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
 https://www.wxwidgets.org/downloads/
 
-Install the Microsoft C runtime and wxWidgets libraries from above web sites. Make note where you put the files.
+Install the Microsoft C runtime and wxWidgets libraries from above web sites. Make note where you put the files. Then create a folder where you will build s2spice.  Open a command prompt and navigate to the project folder.  These command examples should help you build but you will have to change some of the paths to match where you put the MSVC runtime and wxWidgets headers and library files.
 
 ```
+git clone https://github.com/transmitterdan/s2spice.git
+git clone https://github.com/libigl/eigen.git
 cd build
 mkdir Release
 copy "C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x86\*.*" Release
@@ -82,6 +86,7 @@ cmake --build . --config Release
 cd ..\Test
 ..\build\Release\s2spice.exe
 ```
+If all goes well you should see the s2spice window open.
 
 Windows dependencies:
 ```
