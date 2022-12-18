@@ -103,6 +103,13 @@ private:
   vector<string> Symbol1port(const string& symname) const;
   vector<string> Symbol2port(const string& symname) const;
 
+  // Read in .snp file
+  bool ReadSNP(const wxFileName& file);
+  // Write .asy file
+  bool WriteASY(const wxFileName& file);
+  // Write .lib file
+  bool WriteLIB(const wxFileName& file);
+
   // Convert text to S-parameters
   void Convert2S();
 
@@ -196,101 +203,36 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
       new wxButton(this, ID_QUIT, "Quit", wxPoint(280, 10), wxSize(80, 30));
 }
 
+
+void MyFrame::OnQuit(wxCommandEvent& event) {
+  // shut down the main frame
+  Close(true);
+}
+
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
-  wxFileName lib_file = snp_file;
-  lib_file.SetExt("lib");
-  wxString libName(lib_file.GetFullPath());
-  if (lib_file.Exists()) {
-    wxString mess =
-        wxString::Format(_("Lib file '%s' exists. Overwrite?"), libName);
+
+  wxBusyCursor wait;
+  wxFileName libFile = snp_file;
+  libFile.SetExt("lib");
+  if (libFile.Exists()) {
+    wxString mess = wxString::Format(_("Library file '%s' exists. Overwrite?"),
+                                     libFile.GetFullPath());
     if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
                      this) == wxNO)
       return;
   }
-
-  wxBusyCursor wait;
-
-  ofstream output_stream(libName.c_str());
-  if (!output_stream) {
-    wxLogError("Cannot create file '%s'.", libName);
-    return;
-  }
-  output_stream << ".SUBCKT " << lib_file.GetName() << " ";
-  for (int i = 0; i < numPorts + 1; i++) output_stream << " " << i + 1;
-  output_stream << "\n";
-  output_stream << "* Pin " << numPorts+1 << " is the reference plane (usually it should be connected to GND)\n";
-
-  for (int i = 0; i < comment_strings.Count(); i++) {
-    output_stream << "*" << comment_strings[i].Mid(1) << "\n";
-  }
-  output_stream << "*" << option_string[0].Mid(1) << "\n";
-  output_stream << "*";
-
-  for (int i = 0; i < numPorts; i++) {
-    output_stream << " Z" << i + 1 << " = " << Z0;
-  }
-  output_stream << "\n";
-
-  /* define resistances for Spice model */
-
-  for (int i = 0; i < numPorts; i++) {
-    output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
-                                       10 * (i + 1), -Z0)
-                          .c_str());
-    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1, 10 * (i + 1),
-                                       10 * (i + 1) + 1, 2 * Z0));
-  }
-  output_stream << "\n";
-  char* out = new char[2049];
-  for (int i = 0; i < numPorts; i++) {
-    for (int j = 0; j < numPorts; j++) {
-      snprintf(out, 2048, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
-      output_stream << out;
-      if (j + 1 == numPorts) {
-        snprintf(out, 2048, "E%d%d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
-                 i + 1, j + 1, numPorts + 1, 10 * (j + 1), numPorts + 1);
-        output_stream << out;
-      } else {
-        snprintf(out, 2048, "E%d%d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, i + 1, j + 1, i + 1, j + 2, 10 * (j + 1), numPorts + 1);
-        output_stream << out;
-      }
-      double offset = 0;
-      double prevph = 0;
-      for (auto& sparam : SData) {
-        double phs(atan2(sparam.S(i, j).imag(), sparam.S(i, j).real()));
-        double mag(20.0 * log10(abs(sparam.S(i, j))));
-        phs *= 180.0 / M_PI;
-
-        if ((abs(phs - prevph)) > 180.0) {
-          offset = offset - 360.0 * (double)signbit(prevph - phs);
-        }
-        prevph = phs;
-        snprintf(out, 2048, "+(%14eHz,%14e,%14e)\n", sparam.Freq, mag,
-                 phs + offset);
-        output_stream << out;
-      }
-      output_stream << "\n";
-    }
-  }
-  delete[] out;
-  output_stream << ".ENDS * " << lib_file.GetName() << "\n";
-  SetStatusText(
-      wxString::Format("S2spice: Data successfully written to %s.", libName));
-  data_saved = true;
+  bool res = WriteLIB(libFile);
+  if (res)
+    SetStatusText(wxString::Format(
+        "S2spice: Library object %s successfully created.", snp_file.GetName()));
 }
 
 void MyFrame::OnMkASY(wxCommandEvent& event) {
   //  wxMessageBox("Symbol button pressed.");
-  if (numPorts < 1) {
-    wxString mess = wxString::Format(
-        _("No data. Please open SnP file and make LIB first."));
-    wxLogError(mess);
-    return;
-  }
 
-  wxFileName asyFile(snp_file);
+  wxBusyCursor wait;
+  wxFileName asyFile = snp_file;
   asyFile.SetExt("asy");
   if (asyFile.Exists()) {
     wxString mess = wxString::Format(_("Symbol file '%s' exists. Overwrite?"),
@@ -299,32 +241,10 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
                      this) == wxNO)
       return;
   }
-
-  wxBusyCursor wait;
-
-  vector<string> sym;
-
-  sym = Symbol(asyFile.GetName().ToStdString());
-
-  if (sym.empty()) {
-    wxLogError("Error creating symbol '%s'.", asyFile.GetName());
-    return;
-  }
-
-  string symName(asyFile.GetFullPath().ToStdString());
-  ofstream output_stream(symName);
-  if (!output_stream) {
-    wxLogError("Cannot create file '%s'.", symName);
-    return;
-  }
-  for (auto i : sym) {
-    output_stream << i << "\n";
-  }
-}
-
-void MyFrame::OnQuit(wxCommandEvent& event) {
-  // shut down the main frame
-  Close(true);
+  bool res = WriteASY(asyFile);
+  if (res)
+    SetStatusText(wxString::Format(
+        "S2spice: Symbol object %s successfully created.", asyFile.GetName()));
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
@@ -601,4 +521,108 @@ vector<string> MyFrame::Symbol(const string& symname) const
       break;
   }
   return symbol;
+}
+
+bool MyFrame::WriteLIB(const wxFileName& lib_file) {
+  wxString libName(lib_file.GetFullPath());
+
+  ofstream output_stream(libName.c_str());
+  if (!output_stream) {
+    wxLogError("Cannot create file '%s'.", libName);
+    return false;
+  }
+  output_stream << ".SUBCKT " << lib_file.GetName() << " ";
+  for (int i = 0; i < numPorts + 1; i++) output_stream << " " << i + 1;
+  output_stream << "\n";
+  output_stream
+      << "* Pin " << numPorts + 1
+      << " is the reference plane (usually it should be connected to GND)\n";
+
+  for (int i = 0; i < comment_strings.Count(); i++) {
+    output_stream << "*" << comment_strings[i].Mid(1) << "\n";
+  }
+  output_stream << "*" << option_string[0].Mid(1) << "\n";
+  output_stream << "*";
+
+  for (int i = 0; i < numPorts; i++) {
+    output_stream << " Z" << i + 1 << " = " << Z0;
+  }
+  output_stream << "\n";
+
+  /* define resistances for Spice model */
+
+  for (int i = 0; i < numPorts; i++) {
+    output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
+                                       10 * (i + 1), -Z0)
+                          .c_str());
+    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1, 10 * (i + 1),
+                                       10 * (i + 1) + 1, 2 * Z0));
+  }
+  output_stream << "\n";
+  char* out = new char[2049];
+  for (int i = 0; i < numPorts; i++) {
+    for (int j = 0; j < numPorts; j++) {
+      snprintf(out, 2048, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
+      output_stream << out;
+      if (j + 1 == numPorts) {
+        snprintf(out, 2048, "E%d%d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
+                 i + 1, j + 1, numPorts + 1, 10 * (j + 1), numPorts + 1);
+        output_stream << out;
+      } else {
+        snprintf(out, 2048, "E%d%d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
+                 j + 1, i + 1, j + 1, i + 1, j + 2, 10 * (j + 1), numPorts + 1);
+        output_stream << out;
+      }
+      double offset = 0;
+      double prevph = 0;
+      for (auto& sparam : SData) {
+        double phs(atan2(sparam.S(i, j).imag(), sparam.S(i, j).real()));
+        double mag(20.0 * log10(abs(sparam.S(i, j))));
+        phs *= 180.0 / M_PI;
+
+        if ((abs(phs - prevph)) > 180.0) {
+          offset = offset - 360.0 * (double)signbit(prevph - phs);
+        }
+        prevph = phs;
+        snprintf(out, 2048, "+(%14eHz,%14e,%14e)\n", sparam.Freq, mag,
+                 phs + offset);
+        output_stream << out;
+      }
+      output_stream << "\n";
+    }
+  }
+  delete[] out;
+  output_stream << ".ENDS * " << lib_file.GetName() << "\n";
+  data_saved = true;
+  return true;
+}
+
+bool MyFrame::WriteASY(const wxFileName& asyFile) {
+
+  if (numPorts < 1) {
+    wxString mess = wxString::Format(
+        _("No data. Please open SnP file and make LIB first."));
+    wxLogError(mess);
+    return false;
+  }
+
+  vector<string> sym;
+
+  sym = Symbol(asyFile.GetName().ToStdString());
+
+  if (sym.empty()) {
+    wxLogError("Error creating symbol '%s'.", asyFile.GetName());
+    return false;
+  }
+
+  string symName(asyFile.GetFullPath().ToStdString());
+  ofstream output_stream(symName);
+  if (!output_stream) {
+    wxLogError("Cannot create file '%s'.", symName);
+    return false;
+  }
+  for (auto i : sym) {
+    output_stream << i << "\n";
+  }
+  return true;
 }

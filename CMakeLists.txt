@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 
 if (APPLE)
   set(PACKAGE_NAME S2spice)
@@ -6,13 +6,19 @@ else (APPLE)
   set(PACKAGE_NAME s2spice)
 endif (APPLE)
 
-project(S2pice)
+project(${PACKAGE_NAME})
 
 # guard against bad build-type strings
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
+
+if (MSVC)
+  set(wxWidgets_USE_UNICODE ON)
+  set(wxWidgets_USE_UNIVERSAL OFF)
+  set(wxWidgets_USE_STATIC ON)
+endif (MSVC)
 
 # Find the wxWidgets library
 SET(wxWidgets_USE_LIBS base core)
@@ -23,6 +29,9 @@ include(${wxWidgets_USE_FILE})
 add_executable(${PACKAGE_NAME}
     s2spice.cpp
 )
-target_include_directories(s2spice PUBLIC ~/eigen/Eigen/)
+target_include_directories(${PACKAGE_NAME} PUBLIC ~/eigen/Eigen/)
 # Link the executable to the wxWidgets library
-target_link_libraries(s2spice ${wxWidgets_LIBRARIES})
+target_link_libraries(${PACKAGE_NAME} ${wxWidgets_LIBRARIES})
+
+install(TARGETS ${PACKAGE_NAME} RUNTIME DESTINATION bin)
+include(CPack)
