@@ -28,14 +28,16 @@ if (MSVC)
 endif (MSVC)
 
 # Find the wxWidgets library
-SET(wxWidgets_USE_LIBS base core)
+# SET(wxWidgets_USE_LIBS base core)
 find_package(wxWidgets REQUIRED)
 include(${wxWidgets_USE_FILE})
 
 # Add the source files
-add_executable(${PACKAGE_NAME}
-    s2spice.cpp
-)
+if (MSVC)
+  add_executable (${PACKAGE_NAME} WIN32 s2spice.cpp)
+else (MSVC)
+  add_executable (${PACKAGE_NAME} s2spice.cpp)
+endif (MSVC)
 # We assume the Eigen template library is located in parallel with s2pice
 # i.e. both exist in the same root directory
 target_include_directories(${PACKAGE_NAME} PUBLIC ${SOURCE_DIR}../eigen/Eigen/)
