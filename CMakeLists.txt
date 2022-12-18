@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.20)
 # cd build
 # cmake .. -DCMAKE_BUILD_TYPE:STRING=Release -DWX_LIB_DIR="%wxWidgets_LIB_DIR%"
 
+# All platforms need the eigen template library
+# git clone https://github.com/libigl/eigen
+
 if (APPLE)
   set(PACKAGE_NAME S2spice)
 else (APPLE)
@@ -33,7 +36,10 @@ include(${wxWidgets_USE_FILE})
 add_executable(${PACKAGE_NAME}
     s2spice.cpp
 )
-target_include_directories(${PACKAGE_NAME} PUBLIC ~/eigen/Eigen/)
+# We assume the Eigen template library is located in parallel with s2pice
+# i.e. both exist in the same root directory
+target_include_directories(${PACKAGE_NAME} PUBLIC ${SOURCE_DIR}../eigen/Eigen/)
+
 # Link the executable to the wxWidgets library
 target_link_libraries(${PACKAGE_NAME} ${wxWidgets_LIBRARIES})
 
