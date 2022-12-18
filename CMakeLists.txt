@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
+# On Windows use this to invoke cmake
+# cd build
+# cmake .. -DCMAKE_BUILD_TYPE:STRING=Release -DWX_LIB_DIR="%wxWidgets_LIB_DIR%"
+
 if (APPLE)
   set(PACKAGE_NAME S2spice)
 else (APPLE)
