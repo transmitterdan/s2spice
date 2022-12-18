@@ -370,7 +370,7 @@ void MyFrame::Convert2S() {
           i = tokens.erase(i);
           double angle = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = complex(mag * cos(angle * M_PI / 180.0),
+          sValue = complex<double>(mag * cos(angle * M_PI / 180.0),
                                 mag * sin(angle * M_PI / 180.0));
         } else if (format == "DB") {
           double mag = stod(tokens.front());
@@ -378,14 +378,14 @@ void MyFrame::Convert2S() {
           mag = pow(10.0, mag / 20.0);
           double angle = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = complex(mag * cos(angle * M_PI / 180.0),
+          sValue = complex<double>(mag * cos(angle * M_PI / 180.0),
                                 mag * sin(angle * M_PI / 180.0));
         } else if (format == "RI") {
           double re = stod(tokens.front());
           i = tokens.erase(i);
           double im = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = complex(re, im);
+          sValue = complex<double>(re, im);
         } else {
           wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
           return;
