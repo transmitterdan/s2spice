@@ -53,7 +53,7 @@ using namespace std;
 #define MAX_PORTS 99  // maximum number of ports we will handle
 
 struct Sparam {
-  double Freq;
+  double Freq = 0;
   Eigen::Matrix<complex<double>, Eigen::Dynamic, Eigen::Dynamic> S;
 };
 
@@ -136,8 +136,8 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_BUTTON(ID_QUIT, MyFrame::OnQuit)
 wxEND_EVENT_TABLE()
 
-    // This is the main entry point for the program
-    wxIMPLEMENT_APP(MyApp);
+// This is the main entry point for the program
+wxIMPLEMENT_APP(MyApp);
 
 // This is the implementation of the MyApp class
 bool MyApp::OnInit() {
@@ -194,12 +194,12 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
       new wxButton(this, ID_OPEN, "Open", wxPoint(10, 10), wxSize(80, 30));
 
   // Create the "Read" button
-  wxButton* libButton = new wxButton(this, ID_MKLIB, "Make LIB",
+  wxButton* libButton = new wxButton(this, ID_MKLIB, "Save LIB",
                                      wxPoint(100, 10), wxSize(80, 30));
 
   // Create the "Symbol" button
   wxButton* symButton =
-      new wxButton(this, ID_MKSYM, "Make SYM", wxPoint(190, 10), wxSize(80, 30));
+      new wxButton(this, ID_MKSYM, "Save SYM", wxPoint(190, 10), wxSize(80, 30));
 
   // Create the "Quit" button
   wxButton* quitButton =
@@ -263,7 +263,8 @@ void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
                      this) == wxNO)
       return;
   }
-  wxFileDialog openFileDialog(this, _("Open SnP file"), "", "", "",
+  wxFileDialog openFileDialog(this, _("Open SnP file"), "", "",
+                              _("XYZ files(*.snp) | *.s?p"),
                               wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
   if (openFileDialog.ShowModal() == wxID_CANCEL)
@@ -630,8 +631,8 @@ bool MyFrame::WriteASY(const wxFileName& asyFile) {
     wxLogError("Cannot create file '%s'.", symName);
     return false;
   }
-  for (auto i : sym) {
-    output_stream << i << "\n";
+  for (auto i = sym.begin(); i != sym.end(); i++) {
+    output_stream << *i << "\n";
   }
   return true;
 }
