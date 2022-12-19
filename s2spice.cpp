@@ -111,6 +111,11 @@ SObject::SObject() {
 }
 
 bool SObject::readSfile(wxWindow *parent) {
+#if defined(_WIN32)
+  char const *WildcardStr = "S paramter (*.snp)|*.s?p|All files (*.*)|*.*";
+#else
+  char const *WildcardStr = "S paramter (*p)|*p;*P|All files (*)|*";
+#endif
   if (!dataSaved()) {
     if (wxMessageBox(_("Current content has not been saved! Proceed?"),
                      _("Please confirm"), wxICON_QUESTION | wxYES_NO,
@@ -118,7 +123,7 @@ bool SObject::readSfile(wxWindow *parent) {
       return false;
   }
   wxFileDialog openFileDialog(parent, _("Open SnP file"), "", "",
-                              _("Sparam files(*.snp)|*.s1p;*.s2p;*.s3p;*.s4p;*.s5p;*.s6p;*.s7p;*.s8p;*.s9p|All files(*.*)|*.*"),
+                              WildcardStr,
                               wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
   if (openFileDialog.ShowModal() == wxID_CANCEL)
