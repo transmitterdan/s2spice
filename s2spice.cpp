@@ -1,10 +1,10 @@
 /***************************************************************************
  *
  * Project:  S2spice
- * Purpose:  S2spice wxWidgets Program converts S-parameter files to Spice 
+ * Purpose:  S2spice wxWidgets Program converts S-parameter files to Spice
  *           subcircuit library file.
  * Author:   Dan Dickey
- * 
+ *
  * Base on: s2spice.c
  * (https://groups.io/g/LTspice/files/z_yahoo/Tut/S-Parameter/s2spice.doc)
  *
@@ -50,11 +50,28 @@ using namespace std;
 #include <string>
 #include <utility>
 
+#include "matrix.h"
+
 #define MAX_PORTS 99  // maximum number of ports we will handle
+
+typedef vector<double> Vec; // rows
+typedef vector<Vec> Mat;    // matrix
 
 struct Sparam {
   double Freq = 0;
   Eigen::Matrix<complex<double>, Eigen::Dynamic, Eigen::Dynamic> S;
+  Mat mag;
+  Mat phi;
+  void resize(const int n) {
+    S.resize(n, n);
+    vector<double> row(n);
+    mag.resize(n);
+    phi.resize(n);
+    for (int i=0; i<n; i++)
+    {
+      mag[i] = row;
+      phi[i] = row;}
+    }
 };
 
 class SObject : public wxObject {
@@ -63,27 +80,27 @@ public:
   int nPorts(void) { return numPorts; }
   int nFreq(void) { return SData.size(); }
   bool dataSaved(void) { return (data_strings.empty() || data_saved); }
-  bool readSfile(wxWindow *parent);
-  bool writeLibFile(wxWindow *parent);
-  bool writeSymFile(wxWindow *parent);
+  bool readSfile(wxWindow* parent);
+  bool writeLibFile(wxWindow* parent);
+  bool writeSymFile(wxWindow* parent);
   wxFileName getSNPfile() { return snp_file; }
   wxFileName getASYfile() { return asy_file; }
   wxFileName getLIBfile() { return lib_file; }
 
 private:
   vector<Sparam> SData;
-  string data_strings;       // String array of data from SnP file
+  string data_strings;            // String array of data from SnP file
   wxArrayString comment_strings;  // String array of comments from SnP file
   bool data_saved;                // have we saved in imported S-parameter file
-  int numPorts;           // number of ports in this file (comes from file name)
+  int numPorts;         // number of ports in this file (comes from file name)
   wxFileName snp_file;  // file that is currently loaded
   wxFileName asy_file;
   wxFileName lib_file;
-  double fUnits;        // frequency units
-  double Z0;            // reference Z
-  wxString format;      // data format (DB, MA or RI)
-  wxString parameter;   // type of parameter (S is the only allowed type)
-  wxString option_string;    // meta data strings
+  double fUnits;           // frequency units
+  double Z0;               // reference Z
+  wxString format;         // data format (DB, MA or RI)
+  wxString parameter;      // type of parameter (S is the only allowed type)
+  wxString option_string;  // meta data strings
 
   // This function reads the contents of the file into a vector of points
   vector<pair<double, double>> ReadFile(const string& fileName);
@@ -110,11 +127,13 @@ SObject::SObject() {
   Z0 = 50;
 }
 
-bool SObject::readSfile(wxWindow *parent) {
-#if defined(_WIN32)
-  char const *WildcardStr = "S paramter (*.snp)|*.s?p|All files (*.*)|*.*";
+bool SObject::readSfile(wxWindow* parent) {
+#if defined(_WIN32) || defined(_WIN64)
+  char const* WildcardStr = "S paramter (*.snp)|*.s?p|All files (*.*)|*.*";
 #else
-  char const *WildcardStr = "S paramter (*p)|*p;*P|All files (*)|*";
+  // On non-Windows platforms we try to find mostly snp files but
+  // they don't all allow ? as a wildcard
+  char const* WildcardStr = "S paramter (*p)|*p;*P|All files (*)|*";
 #endif
   if (!dataSaved()) {
     if (wxMessageBox(_("Current content has not been saved! Proceed?"),
@@ -122,8 +141,7 @@ bool SObject::readSfile(wxWindow *parent) {
                      parent) == wxNO)
       return false;
   }
-  wxFileDialog openFileDialog(parent, _("Open SnP file"), "", "",
-                              WildcardStr,
+  wxFileDialog openFileDialog(parent, _("Open SnP file"), "", "", WildcardStr,
                               wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
   if (openFileDialog.ShowModal() == wxID_CANCEL)
@@ -176,7 +194,7 @@ bool SObject::readSfile(wxWindow *parent) {
     parameter = "S";
     Z0 = 50;
   } else {
-    wxArrayString options(wxStringTokenize(option_string));
+    wxArrayString options(wxStringTokenize(option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
     for (size_t i = 0; i < options.GetCount(); i++) {
       if (options[i].Matches("GHZ"))
         fUnits = 1e9;
@@ -212,7 +230,7 @@ bool SObject::readSfile(wxWindow *parent) {
   return true;
 }
 
-bool SObject::writeLibFile(wxWindow *parent) {
+bool SObject::writeLibFile(wxWindow* parent) {
   wxFileName libFile = snp_file;
   libFile.SetExt("lib");
   if (libFile.Exists()) {
@@ -226,7 +244,7 @@ bool SObject::writeLibFile(wxWindow *parent) {
   return true;
 }
 
-bool SObject::writeSymFile(wxWindow *parent){
+bool SObject::writeSymFile(wxWindow* parent) {
   wxFileName asyFile = snp_file;
   asyFile.SetExt("asy");
   if (asyFile.Exists()) {
@@ -240,7 +258,7 @@ bool SObject::writeSymFile(wxWindow *parent){
   return true;
 }
 
-bool SObject::WriteASY(const wxFileName &asyFile) {
+bool SObject::WriteASY(const wxFileName& asyFile) {
   asy_file = asyFile;
   if (numPorts < 1) {
     wxString mess = wxString::Format(
@@ -282,7 +300,7 @@ public:
   MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
 
 private:
-  SObject SData;
+  SObject SData1;
 
   // This function is called when the "Open" button is clicked
   void OnOpen(wxCommandEvent& event);
@@ -334,15 +352,11 @@ bool MyApp::OnInit() {
 // This is the implementation of the MyFrame class
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
-
   auto menuFile = new wxMenu();
-  menuFile->Append(ID_OPEN, "&Open...\tCtrl-O",
-                   "Open SnP file");
+  menuFile->Append(ID_OPEN, "&Open...\tCtrl-O", "Open SnP file");
   menuFile->AppendSeparator();
-  menuFile->Append(ID_MKLIB, "&Save LIB...\tCtrl-L",
-                   "Save Library file");
-  menuFile->Append(ID_MKSYM, "&Save ASY...\tCtrl-L",
-                   "Save Symbol file");
+  menuFile->Append(ID_MKLIB, "&Save LIB...\tCtrl-L", "Save Library file");
+  menuFile->Append(ID_MKSYM, "&Save ASY...\tCtrl-L", "Save Symbol file");
   menuFile->Append(wxID_EXIT);
 
   auto menuHelp = new wxMenu();
@@ -354,11 +368,17 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   SetMenuBar(menuBar);
 
   CreateStatusBar();
-  SetStatusText("S2spice: Use OPEN to convert Touchstone files to LTspice subcircuit.");
+  SetStatusText("S2spice: Select OPEN to start converting Touchstone files.");
 
+  // Instead of writing an event handler we use a little functor
+  // to connect to the menu events
   menuBar->Bind(wxEVT_MENU, [&](wxCommandEvent& event) {
     if (event.GetId() == ID_OPEN)
       OnOpen(event);
+    else if (event.GetId() == ID_MKSYM)
+      OnMkASY(event);
+    else if (event.GetId() == ID_MKLIB)
+      OnMkLIB(event);
     else if (event.GetId() == wxID_ABOUT)
       wxMessageBox(
           "Utility to convert Touchstone (aka SnP files) into LTspice\n"
@@ -366,7 +386,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
           " LIB and ASY files.",
           "About S2spice", wxOK | wxICON_INFORMATION);
     else if (event.GetId() == wxID_EXIT)
-      Close(true);
+      OnQuit(event);
     else
       event.Skip();
   });
@@ -379,14 +399,13 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
                                      wxPoint(100, 10), wxSize(80, 30));
 
   // Create the "Symbol" button
-  wxButton* symButton =
-      new wxButton(this, ID_MKSYM, "Save SYM", wxPoint(190, 10), wxSize(80, 30));
+  wxButton* symButton = new wxButton(this, ID_MKSYM, "Save SYM",
+                                     wxPoint(190, 10), wxSize(80, 30));
 
   // Create the "Quit" button
   wxButton* quitButton =
       new wxButton(this, ID_QUIT, "Quit", wxPoint(280, 10), wxSize(80, 30));
 }
-
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
   // shut down the main frame
@@ -395,34 +414,36 @@ void MyFrame::OnQuit(wxCommandEvent& event) {
 
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
-  if (SData.nPorts() < 1) {
-    wxString mess = wxString::Format(
-        _("No data. Please open SnP file then make LIB."));
+  if (SData1.nPorts() < 1) {
+    wxString mess =
+        wxString::Format(_("No data. Please open SnP file first."));
     wxLogError(mess);
     return;
   }
 
   wxBusyCursor wait;
-  bool res = SData.writeLibFile(this);
+  bool res = SData1.writeLibFile(this);
   if (res)
-    SetStatusText(wxString::Format(
-        "S2spice: Library object %s successfully created.", SData.getSNPfile().GetName()));
+    SetStatusText(
+        wxString::Format("S2spice: Library object %s successfully created.",
+                         SData1.getSNPfile().GetName()));
 }
 
 void MyFrame::OnMkASY(wxCommandEvent& event) {
   //  wxMessageBox("Symbol button pressed.");
 
   wxBusyCursor wait;
-  bool res = SData.writeSymFile(this);
+  bool res = SData1.writeSymFile(this);
   if (res)
-    SetStatusText(wxString::Format(
-        "S2spice: Symbol object %s successfully created.", SData.getASYfile().GetName()));
+    SetStatusText(
+        wxString::Format("S2spice: Symbol object %s successfully created.",
+                         SData1.getASYfile().GetName()));
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
-  SData.readSfile(this);
+  SData1.readSfile(this);
   SetStatusText(wxString::Format("S2spice: Data successfully imported from %s.",
-                                 SData.getSNPfile().GetFullPath()));
+                                 SData1.getSNPfile().GetFullPath()));
 }
 
 void SObject::Convert2S() {
@@ -437,41 +458,39 @@ void SObject::Convert2S() {
   string Next_Last = tokens[nFreqs - 2];
   nFreqs = nFreqs / nTokens;
   SData.clear();
-  S.S.resize(numPorts, numPorts);
+  S.resize(numPorts);
 
   auto i = tokens.begin();
   while (i != tokens.end()) {
+    double mag, angle;
     S.Freq = fUnits * atof(tokens.front().c_str());
     i = tokens.erase(i);
     for (auto j = 0; j < numPorts; j++) {
       for (auto k = 0; k < numPorts; k++) {
-        complex<double> sValue;
         if (format == "MA") {
-          double mag = stod(tokens.front());
+          mag = stod(tokens.front());
           i = tokens.erase(i);
-          double angle = stod(tokens.front());
+          angle = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = complex<double>(mag * cos(angle * M_PI / 180.0),
-                                mag * sin(angle * M_PI / 180.0));
         } else if (format == "DB") {
-          double mag = stod(tokens.front());
+          mag = stod(tokens.front());
           i = tokens.erase(i);
           mag = pow(10.0, mag / 20.0);
-          double angle = stod(tokens.front());
+          angle = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = complex<double>(mag * cos(angle * M_PI / 180.0),
-                                mag * sin(angle * M_PI / 180.0));
         } else if (format == "RI") {
           double re = stod(tokens.front());
           i = tokens.erase(i);
           double im = stod(tokens.front());
           i = tokens.erase(i);
-          sValue = complex<double>(re, im);
+          mag = sqrt(re*re+im*im);
+          angle = atan2(im,re);
         } else {
           wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
           return;
         }
-        S.S(j, k) = sValue;
+        S.S(j, k) = complex<double>(mag * cos(angle * M_PI / 180.0),
+                                    mag * sin(angle * M_PI / 180.0));
       }
     }
     if (numPorts == 2) swap(S.S(0, 1), S.S(1, 0));
@@ -479,8 +498,7 @@ void SObject::Convert2S() {
   }
 }
 
-vector<string> SObject::Symbol2port(const string& symname) const
-{
+vector<string> SObject::Symbol2port(const string& symname) const {
   vector<string> symbol;
   symbol.push_back("Version 4");
   symbol.push_back("SymbolType BLOCK");
@@ -501,8 +519,7 @@ vector<string> SObject::Symbol2port(const string& symname) const
   return symbol;
 }
 
-vector<string> SObject::Symbol1port(const string& symname) const
-{
+vector<string> SObject::Symbol1port(const string& symname) const {
   vector<string> symbol;
   symbol.push_back("Version 4");
   symbol.push_back("SymbolType BLOCK");
@@ -520,11 +537,9 @@ vector<string> SObject::Symbol1port(const string& symname) const
   return symbol;
 }
 
-vector<string> SObject::Symbol(const string& symname) const
-{
+vector<string> SObject::Symbol(const string& symname) const {
   vector<string> symbol;
-  switch (numPorts)
-  {
+  switch (numPorts) {
     case 1:
       symbol = Symbol1port(symname);
       break;
@@ -535,22 +550,23 @@ vector<string> SObject::Symbol(const string& symname) const
       vector<int> pinsLeft, pinsRight;
       symbol.push_back("Version 4");
       symbol.push_back("SymbolType BLOCK");
-      for (int i = 0; i < numPorts; i++)
-      {
-        if (!(i % 2) && pinsLeft.size() < numPorts/2)
-          pinsLeft.push_back(i+1);
+      for (int i = 0; i < numPorts; i++) {
+        if (!(i % 2) && pinsLeft.size() < numPorts / 2)
+          pinsLeft.push_back(i + 1);
         else
-          pinsRight.push_back(i+1);
+          pinsRight.push_back(i + 1);
       }
       int symWidth = 96;
-      int symHeight = max ( pinsLeft.size() * 32, pinsRight.size() * 32 );
-      int xur = symWidth/2;
+      int symHeight = max(pinsLeft.size() * 32, pinsRight.size() * 32);
+      int xur = symWidth / 2;
       int yur = -32;
       int yll = yur + symHeight;
       int xll = xur - symWidth;
       stringstream ss;
-      ss << "RECTANGLE Normal " << xll << " " << yll << " " << xur << " " << yur;
-      symbol.push_back(ss.str()); ss.str(std::string());
+      ss << "RECTANGLE Normal " << xll << " " << yll << " " << xur << " "
+         << yur;
+      symbol.push_back(ss.str());
+      ss.str(std::string());
       symbol.push_back("TEXT 0 -48 Center 2 " + symname);
       symbol.push_back("SYMATTR Prefix X");
       symbol.push_back("SYMATTR SpiceModel " + symname);
@@ -558,47 +574,50 @@ vector<string> SObject::Symbol(const string& symname) const
       // Do the left pins
       int yPin;
       int pinName = -1;
-      if (pinsLeft.size() % 2)
-      {
+      if (pinsLeft.size() % 2) {
         yPin = 0;
-      } else
-      {
+      } else {
         yPin = -16;
       }
-      for ( auto i: pinsLeft)
-      {
+      for (auto i : pinsLeft) {
         ss << "PIN " << xll << " " << yPin << " LEFT 8";
-        symbol.push_back(ss.str()); ss.str(std::string());
+        symbol.push_back(ss.str());
+        ss.str(std::string());
         yPin += 32;
         ss << "PINATTR PinName " << i;
-        symbol.push_back(ss.str()); ss.str(std::string());
+        symbol.push_back(ss.str());
+        ss.str(std::string());
         ss << "PINATTR SpiceOrder " << i;
-        symbol.push_back(ss.str()); ss.str(std::string());
+        symbol.push_back(ss.str());
+        ss.str(std::string());
       }
-      if (pinsRight.size() % 2)
-      {
+      if (pinsRight.size() % 2) {
         yPin = 0;
-      } else
-      {
+      } else {
         yPin = -16;
       }
       pinName = 0;
-      for (auto i : pinsRight)
-      {
+      for (auto i : pinsRight) {
         ss << "PIN " << xur << " " << yPin << " RIGHT 8";
-        symbol.push_back(ss.str()); ss.str(std::string());
+        symbol.push_back(ss.str());
+        ss.str(std::string());
         yPin += 32;
         ss << "PINATTR PinName " << i;
-        symbol.push_back(ss.str()); ss.str(std::string());
+        symbol.push_back(ss.str());
+        ss.str(std::string());
         ss << "PINATTR SpiceOrder " << i;
-        symbol.push_back(ss.str()); ss.str(std::string());
+        symbol.push_back(ss.str());
+        ss.str(std::string());
       }
       ss << "PIN 0 " << yll << " Bottom 8";
-      symbol.push_back(ss.str()); ss.str(std::string());
+      symbol.push_back(ss.str());
+      ss.str(std::string());
       ss << "PINATTR PinName " << numPorts + 1;
-      symbol.push_back(ss.str()); ss.str(std::string());
+      symbol.push_back(ss.str());
+      ss.str(std::string());
       ss << "PINATTR SpiceOrder " << numPorts + 1;
-      symbol.push_back(ss.str()); ss.str(std::string());
+      symbol.push_back(ss.str());
+      ss.str(std::string());
       break;
   }
   return symbol;
