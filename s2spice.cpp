@@ -57,43 +57,33 @@ struct Sparam {
   Eigen::Matrix<complex<double>, Eigen::Dynamic, Eigen::Dynamic> S;
 };
 
-// This is the main class for the program
-class MyApp : public wxApp {
+class SObject : public wxObject {
 public:
-  virtual bool OnInit();
-};
-
-// This is the main event handler for the program
-class MyFrame : public wxFrame {
-public:
-  MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
-  int nFreq(void) { return SData.size(); }
+  SObject();
   int nPorts(void) { return numPorts; }
+  int nFreq(void) { return SData.size(); }
+  bool dataSaved(void) { return (data_strings.empty() || data_saved); }
+  bool readSfile(wxWindow *parent);
+  bool writeLibFile(wxWindow *parent);
+  bool writeSymFile(wxWindow *parent);
+  wxFileName getSNPfile() { return snp_file; }
+  wxFileName getASYfile() { return asy_file; }
+  wxFileName getLIBfile() { return lib_file; }
 
 private:
+  vector<Sparam> SData;
   string data_strings;       // String array of data from SnP file
   wxArrayString comment_strings;  // String array of comments from SnP file
-  wxArrayString option_string;    // meta data strings
   bool data_saved;                // have we saved in imported S-parameter file
   int numPorts;           // number of ports in this file (comes from file name)
   wxFileName snp_file;  // file that is currently loaded
+  wxFileName asy_file;
+  wxFileName lib_file;
   double fUnits;        // frequency units
   double Z0;            // reference Z
   wxString format;      // data format (DB, MA or RI)
   wxString parameter;   // type of parameter (S is the only allowed type)
-  vector<Sparam> SData;
-
-  // This function is called when the "Open" button is clicked
-  void OnOpen(wxCommandEvent& event);
-
-  // This function is called when the "Read" button is clicked
-  void OnMkLIB(wxCommandEvent& event);
-
-  // This function is called when the "Symbol" button is clicked
-  void OnMkASY(wxCommandEvent& event);
-
-  // This function is called when the "Quit" button is clicked
-  void OnQuit(wxCommandEvent& event);
+  wxString option_string;    // meta data strings
 
   // This function reads the contents of the file into a vector of points
   vector<pair<double, double>> ReadFile(const string& fileName);
@@ -112,6 +102,194 @@ private:
 
   // Convert text to S-parameters
   void Convert2S();
+};
+
+SObject::SObject() {
+  numPorts = 0;
+  fUnits = 0;
+  Z0 = 50;
+}
+
+bool SObject::readSfile(wxWindow *parent) {
+  if (!dataSaved()) {
+    if (wxMessageBox(_("Current content has not been saved! Proceed?"),
+                     _("Please confirm"), wxICON_QUESTION | wxYES_NO,
+                     parent) == wxNO)
+      return false;
+  }
+  wxFileDialog openFileDialog(parent, _("Open SnP file"), "", "",
+                              _("Sparam files(*.snp)|*.s1p;*.s2p;*.s3p;*.s4p;*.s5p;*.s6p;*.s7p;*.s8p;*.s9p|All files(*.*)|*.*"),
+                              wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+  if (openFileDialog.ShowModal() == wxID_CANCEL)
+    return false;  // the user changed idea...
+
+  wxBusyCursor wait;
+
+  snp_file.Assign(openFileDialog.GetPath());
+  wxFileInputStream input_stream(snp_file.GetFullPath());
+  if (!input_stream.IsOk()) {
+    wxLogError("Cannot open file '%s'.", snp_file.GetFullPath());
+    return false;
+  }
+  wxString N(snp_file.GetExt().Mid(1, 1));
+  if (N.IsNumber()) {
+    numPorts = atoi(N.ToAscii());
+    if (numPorts < 0 || numPorts > MAX_PORTS) numPorts = 0;
+  } else
+    numPorts = 0;
+  if (numPorts < 1) {
+    wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
+    return false;
+  }
+  wxTextInputStream text_input(input_stream);
+  wxString line;
+  comment_strings.Empty();
+  option_string.Clear();
+  data_strings.clear();
+  while (!text_input.GetInputStream().Eof()) {
+    line.Empty();
+    line = text_input.ReadLine();
+    line.Trim();
+    line.Trim(wxFalse);
+    if (line.StartsWith("!"))
+      comment_strings.push_back(line);
+    else if (line.StartsWith(";"))
+      comment_strings.push_back(line);
+    else if (line.StartsWith("*"))
+      comment_strings.push_back(line);
+    else if (line.StartsWith("#"))
+      option_string = line.MakeUpper();
+    else {
+      data_strings.append(line.ToStdString());
+      data_strings.append(" ");
+    }
+  }
+  if (option_string.IsEmpty()) {
+    format = "MA";  // default mag/angle
+    fUnits = 1e9;
+    parameter = "S";
+    Z0 = 50;
+  } else {
+    wxArrayString options(wxStringTokenize(option_string));
+    for (size_t i = 0; i < options.GetCount(); i++) {
+      if (options[i].Matches("GHZ"))
+        fUnits = 1e9;
+      else if (options[i].Matches("MHZ"))
+        fUnits = 1e6;
+      else if (options[i].Matches("KHZ"))
+        fUnits = 1e3;
+      else if (options[i].Matches("HZ"))
+        fUnits = 1;
+      else if (options[i].Matches("S"))
+        parameter = options[i];
+      else if (options[i].Matches("Y"))
+        parameter = options[i];
+      else if (options[i].Matches("Z"))
+        parameter = options[i];
+      else if (options[i].Matches("H"))
+        parameter = options[i];
+      else if (options[i].Matches("G"))
+        parameter = options[i];
+      else if (options[i].Matches("DB"))
+        format = options[i];
+      else if (options[i].Matches("MA"))
+        format = options[i];
+      else if (options[i].Matches("RI"))
+        format = options[i];
+      else if (options[i].Matches("R"))
+        options[i + 1].ToDouble(&Z0);
+    }
+  }
+
+  Convert2S();
+  data_saved = false;
+  return true;
+}
+
+bool SObject::writeLibFile(wxWindow *parent) {
+  wxFileName libFile = snp_file;
+  libFile.SetExt("lib");
+  if (libFile.Exists()) {
+    wxString mess = wxString::Format(_("Library file '%s' exists. Overwrite?"),
+                                     libFile.GetFullPath());
+    if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
+                     parent) == wxNO)
+      return false;
+  }
+  bool res = WriteLIB(libFile);
+  return true;
+}
+
+bool SObject::writeSymFile(wxWindow *parent){
+  wxFileName asyFile = snp_file;
+  asyFile.SetExt("asy");
+  if (asyFile.Exists()) {
+    wxString mess = wxString::Format(_("Symbol file '%s' exists. Overwrite?"),
+                                     asyFile.GetFullPath());
+    if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
+                     parent) == wxNO)
+      return false;
+  }
+  bool res = WriteASY(asyFile);
+  return true;
+}
+
+bool SObject::WriteASY(const wxFileName &asyFile) {
+  asy_file = asyFile;
+  if (numPorts < 1) {
+    wxString mess = wxString::Format(
+        _("No data. Please open SnP file and make LIB first."));
+    wxLogError(mess);
+    return false;
+  }
+
+  vector<string> sym;
+
+  sym = Symbol(asyFile.GetName().ToStdString());
+
+  if (sym.empty()) {
+    wxLogError("Error creating symbol '%s'.", asyFile.GetName());
+    return false;
+  }
+
+  string symName(asyFile.GetFullPath().ToStdString());
+  ofstream output_stream(symName);
+  if (!output_stream) {
+    wxLogError("Cannot create file '%s'.", symName);
+    return false;
+  }
+  for (auto i = sym.begin(); i != sym.end(); i++) {
+    output_stream << *i << "\n";
+  }
+  return true;
+}
+
+// This is the main class for the program
+class MyApp : public wxApp {
+public:
+  virtual bool OnInit();
+};
+
+// This is the main event handler for the program
+class MyFrame : public wxFrame {
+public:
+  MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+
+private:
+  SObject SData;
+
+  // This function is called when the "Open" button is clicked
+  void OnOpen(wxCommandEvent& event);
+
+  // This function is called when the "Read" button is clicked
+  void OnMkLIB(wxCommandEvent& event);
+
+  // This function is called when the "Symbol" button is clicked
+  void OnMkASY(wxCommandEvent& event);
+
+  // This function is called when the "Quit" button is clicked
+  void OnQuit(wxCommandEvent& event);
 
   wxDECLARE_EVENT_TABLE();
   enum wxFrameID {
@@ -151,8 +329,6 @@ bool MyApp::OnInit() {
 // This is the implementation of the MyFrame class
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
-  data_saved = false;
-  numPorts = 0;
 
   auto menuFile = new wxMenu();
   menuFile->Append(ID_OPEN, "&Open...\tCtrl-O",
@@ -214,7 +390,7 @@ void MyFrame::OnQuit(wxCommandEvent& event) {
 
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
-  if (numPorts < 1) {
+  if (SData.nPorts() < 1) {
     wxString mess = wxString::Format(
         _("No data. Please open SnP file then make LIB."));
     wxLogError(mess);
@@ -222,139 +398,29 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   }
 
   wxBusyCursor wait;
-  wxFileName libFile = snp_file;
-  libFile.SetExt("lib");
-  if (libFile.Exists()) {
-    wxString mess = wxString::Format(_("Library file '%s' exists. Overwrite?"),
-                                     libFile.GetFullPath());
-    if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
-                     this) == wxNO)
-      return;
-  }
-  bool res = WriteLIB(libFile);
+  bool res = SData.writeLibFile(this);
   if (res)
     SetStatusText(wxString::Format(
-        "S2spice: Library object %s successfully created.", snp_file.GetName()));
+        "S2spice: Library object %s successfully created.", SData.getSNPfile().GetName()));
 }
 
 void MyFrame::OnMkASY(wxCommandEvent& event) {
   //  wxMessageBox("Symbol button pressed.");
 
   wxBusyCursor wait;
-  wxFileName asyFile = snp_file;
-  asyFile.SetExt("asy");
-  if (asyFile.Exists()) {
-    wxString mess = wxString::Format(_("Symbol file '%s' exists. Overwrite?"),
-                                     asyFile.GetFullPath());
-    if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
-                     this) == wxNO)
-      return;
-  }
-  bool res = WriteASY(asyFile);
+  bool res = SData.writeSymFile(this);
   if (res)
     SetStatusText(wxString::Format(
-        "S2spice: Symbol object %s successfully created.", asyFile.GetName()));
+        "S2spice: Symbol object %s successfully created.", SData.getASYfile().GetName()));
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
-  if (!data_strings.empty() && !data_saved) {
-    if (wxMessageBox(_("Current content has not been saved! Proceed?"),
-                     _("Please confirm"), wxICON_QUESTION | wxYES_NO,
-                     this) == wxNO)
-      return;
-  }
-  wxFileDialog openFileDialog(this, _("Open SnP file"), "", "",
-                              _("XYZ files(*.snp) | *.s?p"),
-                              wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-
-  if (openFileDialog.ShowModal() == wxID_CANCEL)
-    return;  // the user changed idea...
-
-  wxBusyCursor wait;
-
-  snp_file.Assign(openFileDialog.GetPath());
-  wxFileInputStream input_stream(snp_file.GetFullPath());
-  if (!input_stream.IsOk()) {
-    wxLogError("Cannot open file '%s'.", snp_file.GetFullPath());
-    return;
-  }
-  wxString N(snp_file.GetExt().Mid(1, 1));
-  if (N.IsNumber()) {
-    numPorts = atoi(N.ToAscii());
-    if (numPorts < 0 || numPorts > MAX_PORTS) numPorts = 0;
-  } else
-    numPorts = 0;
-  if (numPorts < 1) {
-    wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
-    return;
-  }
-  wxTextInputStream text_input(input_stream);
-  wxString line;
-  comment_strings.Empty();
-  option_string.Empty();
-  data_strings.clear();
-  while (!text_input.GetInputStream().Eof()) {
-    line.Empty();
-    line = text_input.ReadLine();
-    line.Trim();
-    line.Trim(wxFalse);
-    if (line.StartsWith("!"))
-      comment_strings.push_back(line);
-    else if (line.StartsWith(";"))
-      comment_strings.push_back(line);
-    else if (line.StartsWith("*"))
-      comment_strings.push_back(line);
-    else if (line.StartsWith("#"))
-      option_string.push_back(line.MakeUpper());
-    else {
-      data_strings.append(line);
-      data_strings.append(" ");
-    }
-  }
-  if (option_string.IsEmpty()) {
-    format = "MA";  // default mag/angle
-    fUnits = 1e9;
-    parameter = "S";
-    Z0 = 50;
-  } else {
-    wxArrayString options(wxStringTokenize(option_string[0]));
-    for (size_t i = 0; i < options.GetCount(); i++) {
-      if (options[i].Matches("GHZ"))
-        fUnits = 1e9;
-      else if (options[i].Matches("MHZ"))
-        fUnits = 1e6;
-      else if (options[i].Matches("KHZ"))
-        fUnits = 1e3;
-      else if (options[i].Matches("HZ"))
-        fUnits = 1;
-      else if (options[i].Matches("S"))
-        parameter = options[i];
-      else if (options[i].Matches("Y"))
-        parameter = options[i];
-      else if (options[i].Matches("Z"))
-        parameter = options[i];
-      else if (options[i].Matches("H"))
-        parameter = options[i];
-      else if (options[i].Matches("G"))
-        parameter = options[i];
-      else if (options[i].Matches("DB"))
-        format = options[i];
-      else if (options[i].Matches("MA"))
-        format = options[i];
-      else if (options[i].Matches("RI"))
-        format = options[i];
-      else if (options[i].Matches("R"))
-        options[i + 1].ToDouble(&Z0);
-    }
-  }
-
-  Convert2S();
-  data_saved = false;
+  SData.readSfile(this);
   SetStatusText(wxString::Format("S2spice: Data successfully imported from %s.",
-                                 snp_file.GetFullPath()));
+                                 SData.getSNPfile().GetFullPath()));
 }
 
-void MyFrame::Convert2S() {
+void SObject::Convert2S() {
   Sparam S;
   istringstream iss(data_strings);
   vector<string> tokens{istream_iterator<string>{iss},
@@ -408,7 +474,7 @@ void MyFrame::Convert2S() {
   }
 }
 
-vector<string> MyFrame::Symbol2port(const string& symname) const
+vector<string> SObject::Symbol2port(const string& symname) const
 {
   vector<string> symbol;
   symbol.push_back("Version 4");
@@ -430,7 +496,7 @@ vector<string> MyFrame::Symbol2port(const string& symname) const
   return symbol;
 }
 
-vector<string> MyFrame::Symbol1port(const string& symname) const
+vector<string> SObject::Symbol1port(const string& symname) const
 {
   vector<string> symbol;
   symbol.push_back("Version 4");
@@ -449,7 +515,7 @@ vector<string> MyFrame::Symbol1port(const string& symname) const
   return symbol;
 }
 
-vector<string> MyFrame::Symbol(const string& symname) const
+vector<string> SObject::Symbol(const string& symname) const
 {
   vector<string> symbol;
   switch (numPorts)
@@ -533,7 +599,8 @@ vector<string> MyFrame::Symbol(const string& symname) const
   return symbol;
 }
 
-bool MyFrame::WriteLIB(const wxFileName& lib_file) {
+bool SObject::WriteLIB(const wxFileName& libFile) {
+  lib_file = libFile;
   string libName(lib_file.GetFullPath().ToStdString());
 
   ofstream output_stream(libName);
@@ -551,7 +618,7 @@ bool MyFrame::WriteLIB(const wxFileName& lib_file) {
   for (int i = 0; i < comment_strings.Count(); i++) {
     output_stream << "*" << comment_strings[i].Mid(1) << "\n";
   }
-  output_stream << "*" << option_string[0].Mid(1) << "\n";
+  output_stream << "*" << option_string.Mid(1) << "\n";
   output_stream << "*";
 
   for (int i = 0; i < numPorts; i++) {
@@ -604,35 +671,5 @@ bool MyFrame::WriteLIB(const wxFileName& lib_file) {
   delete[] out;
   output_stream << ".ENDS * " << lib_file.GetName() << "\n";
   data_saved = true;
-  return true;
-}
-
-bool MyFrame::WriteASY(const wxFileName& asyFile) {
-
-  if (numPorts < 1) {
-    wxString mess = wxString::Format(
-        _("No data. Please open SnP file and make LIB first."));
-    wxLogError(mess);
-    return false;
-  }
-
-  vector<string> sym;
-
-  sym = Symbol(asyFile.GetName().ToStdString());
-
-  if (sym.empty()) {
-    wxLogError("Error creating symbol '%s'.", asyFile.GetName());
-    return false;
-  }
-
-  string symName(asyFile.GetFullPath().ToStdString());
-  ofstream output_stream(symName);
-  if (!output_stream) {
-    wxLogError("Cannot create file '%s'.", symName);
-    return false;
-  }
-  for (auto i = sym.begin(); i != sym.end(); i++) {
-    output_stream << *i << "\n";
-  }
   return true;
 }
