@@ -13,7 +13,7 @@ else (APPLE)
   set(PACKAGE_NAME s2spice)
 endif (APPLE)
 
-project(${PACKAGE_NAME})
+project(${PACKAGE_NAME} LANGUAGES CXX)
 
 # guard against bad build-type strings
 
@@ -34,16 +34,16 @@ include(${wxWidgets_USE_FILE})
 
 # Add the source files
 if (MSVC)
-  add_executable (${PACKAGE_NAME} WIN32 s2spice.cpp)
+  add_executable (${PACKAGE_NAME} WIN32 main.cpp)
 else (MSVC)
-  add_executable (${PACKAGE_NAME} s2spice.cpp)
+  add_executable (${PACKAGE_NAME} main.cpp)
 endif (MSVC)
-# We assume the Eigen template library is located in parallel with s2pice
-# i.e. both exist in the same root directory
-target_include_directories(${PACKAGE_NAME} PUBLIC ${SOURCE_DIR}../eigen/Eigen/)
+
+add_library(SObject STATIC
+    SObject.cpp)
 
 # Link the executable to the wxWidgets library
-target_link_libraries(${PACKAGE_NAME} ${wxWidgets_LIBRARIES})
+target_link_libraries(${PACKAGE_NAME} ${wxWidgets_LIBRARIES} SObject)
 
 install(TARGETS ${PACKAGE_NAME} RUNTIME DESTINATION bin)
 include(CPack)
