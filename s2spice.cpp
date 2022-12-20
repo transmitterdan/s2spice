@@ -37,9 +37,6 @@
 
 using namespace std;
 
-// We use the Eigen template library for 2-D matrices
-#include <Core>
-
 // std libraries we use
 #include <vector>
 #include <sstream>
@@ -50,29 +47,24 @@ using namespace std;
 #include <string>
 #include <utility>
 
-#include "matrix.h"
+#include "xqsmatrix.h"
+
 
 #define MAX_PORTS 99  // maximum number of ports we will handle
 
-typedef vector<double> Vec; // rows
-typedef vector<Vec> Mat;    // matrix
-
-struct Sparam {
-  double Freq = 0;
-  Eigen::Matrix<complex<double>, Eigen::Dynamic, Eigen::Dynamic> S;
-  Mat mag;
-  Mat phi;
-  void resize(const int n) {
-    S.resize(n, n);
-    vector<double> row(n);
-    mag.resize(n);
-    phi.resize(n);
-    for (int i=0; i<n; i++)
-    {
-      mag[i] = row;
-      phi[i] = row;}
-    }
+class Sparam {
+  public:
+  Sparam() { };
+  Sparam(std::size_t n);
+  double Freq;
+  XQSMatrix<complex<double>> S;
 };
+
+Sparam::Sparam(std::size_t _n) {
+  Freq = 0.0;
+  S.set_row_count(_n);
+  S.set_col_count(_n);
+}
 
 class SObject : public wxObject {
 public:
@@ -447,7 +439,7 @@ void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
 }
 
 void SObject::Convert2S() {
-  Sparam S;
+  Sparam S(numPorts);
   istringstream iss(data_strings);
   vector<string> tokens{istream_iterator<string>{iss},
                         istream_iterator<string>{}};
@@ -458,7 +450,6 @@ void SObject::Convert2S() {
   string Next_Last = tokens[nFreqs - 2];
   nFreqs = nFreqs / nTokens;
   SData.clear();
-  S.resize(numPorts);
 
   auto i = tokens.begin();
   while (i != tokens.end()) {
