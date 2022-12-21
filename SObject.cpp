@@ -81,7 +81,7 @@ bool SObject::readSfile(wxWindow* parent) {
     return false;  // the user changed idea...
 
   wxBusyCursor wait;
-
+  SData.clear();
   snp_file.Assign(openFileDialog.GetPath());
   wxFileInputStream input_stream(snp_file.GetFullPath());
   if (!input_stream.IsOk()) {
@@ -158,8 +158,11 @@ bool SObject::readSfile(wxWindow* parent) {
         options[i + 1].ToDouble(&Z0);
     }
   }
-
-  Convert2S();
+  if (!Convert2S()) {
+    data_saved = true;
+    data_strings.clear();
+    return false;
+  }
   data_saved = false;
   return true;
 }
@@ -233,7 +236,7 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
       double offset = 0;
       double prevph = 0;
       for (auto& sparam : SData) {
-        double phs = sparam.Phase(i,j);
+        double phs = sparam.Phase(i, j);
         double dB = sparam.dB(i, j);
         if ((abs(phs - prevph)) > 180.0) {
           offset = offset - 360.0 * (double)signbit(prevph - phs);
@@ -295,17 +298,17 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
   return true;
 }
 
-void SObject::Convert2S() {
+bool SObject::Convert2S() {
   Sparam S(numPorts);
+  // Since we know the number of ports we can know the amount
+  // of data that should be in the data section.  So we tokenize
+  // the numbers and then make sure we get exactly the right #.
   istringstream iss(data_strings);
   vector<string> tokens{istream_iterator<string>{iss},
                         istream_iterator<string>{}};
   data_strings.clear();
-  int nTokens = numPorts * numPorts * 2 + 1;
-  int nFreqs = tokens.size();
-  string Last = tokens[nFreqs - 1];
-  string Next_Last = tokens[nFreqs - 2];
-  nFreqs = nFreqs / nTokens;
+  int nFreqs = tokens.size() / (numPorts * numPorts * 2 + 1);
+  if (nFreqs * (numPorts * numPorts * 2 + 1) != tokens.size()) return false;
   SData.clear();
 
   auto i = tokens.begin();
@@ -317,7 +320,7 @@ void SObject::Convert2S() {
           double mag, angle;
           mag = stod(*i++);
           angle = stod(*i++);
-          S.dB(j, k) = 20.0*log10(mag);
+          S.dB(j, k) = 20.0 * log10(mag);
           S.Phase(j, k) = angle;
         }
       }
@@ -341,10 +344,9 @@ void SObject::Convert2S() {
           S.Phase(j, k) = atan2(im, re);
         }
       }
-    }
-    else {
-        wxLogError(_("Cannot read file '%s'."), snp_file.GetFullPath());
-        return;
+    } else {
+      wxLogError(_("Cannot read file '%s'."), snp_file.GetFullPath());
+      return false;
     }
     if (numPorts == 2) {
       swap(S.dB(0, 1), S.dB(1, 0));
@@ -353,6 +355,7 @@ void SObject::Convert2S() {
     SData.push_back(S);
   }
   tokens.clear();
+  return true;
 }
 
 vector<string> SObject::Symbol2port(const string& symname) const {

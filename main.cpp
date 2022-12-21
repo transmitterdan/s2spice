@@ -205,7 +205,11 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
-  SData1.readSfile(this);
-  SetStatusText(wxString::Format(_("S2spice: Data successfully imported from %s."),
+  if (SData1.readSfile(this))
+    SetStatusText(wxString::Format(_("S2spice: Data successfully imported from %s."),
                                  SData1.getSNPfile().GetFullPath()));
+  else
+    SetStatusText(
+        wxString::Format(_("S2spice: Data import failed from %s!"),
+                         SData1.getSNPfile().GetFullPath()));
 }

@@ -91,7 +91,7 @@ private:
   bool WriteLIB(const wxFileName& file);
 
   // Convert text to S-parameters
-  void Convert2S();
+  bool Convert2S();
 };
 
 #endif
