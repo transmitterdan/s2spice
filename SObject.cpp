@@ -310,16 +310,13 @@ void SObject::Convert2S() {
 
   auto i = tokens.begin();
   while (i != tokens.end()) {
-    S.Freq = fUnits * atof(tokens.front().c_str());
-    i = tokens.erase(i);
+    S.Freq = fUnits * atof(i++->c_str());
     if (format == "MA") {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double mag, angle;
-          mag = stod(tokens.front());
-          i = tokens.erase(i);
-          angle = stod(tokens.front());
-          i = tokens.erase(i);
+          mag = stod(*i++);
+          angle = stod(*i++);
           S.dB(j, k) = 20.0*log10(mag);
           S.Phase(j, k) = angle;
         }
@@ -328,10 +325,8 @@ void SObject::Convert2S() {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double dB, angle;
-          dB = stod(tokens.front());
-          i = tokens.erase(i);
-          angle = stod(tokens.front());
-          i = tokens.erase(i);
+          dB = stod(*i++);
+          angle = stod(*i++);
           S.dB(j, k) = dB;
           S.Phase(j, k) = angle;
         }
@@ -340,10 +335,8 @@ void SObject::Convert2S() {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double re, im;
-          re = stod(tokens.front());
-          i = tokens.erase(i);
-          im = stod(tokens.front());
-          i = tokens.erase(i);
+          re = stod(*i++);
+          im = stod(*i++);
           S.dB(j, k) = 20 * log10(sqrt(re * re + im * im));
           S.Phase(j, k) = atan2(im, re);
         }
@@ -359,6 +352,7 @@ void SObject::Convert2S() {
     }
     SData.push_back(S);
   }
+  tokens.clear();
 }
 
 vector<string> SObject::Symbol2port(const string& symname) const {
