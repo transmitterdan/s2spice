@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 # On Windows use this to invoke cmake
 # cd build
-# cmake .. -DCMAKE_BUILD_TYPE:STRING=Release -DWX_LIB_DIR="%wxWidgets_LIB_DIR%"
+# cmake -AWIN32 -G "Visual Studio 17 2022" .. -DWX_LIB_DIR="%wxWidgets_LIB_DIR%"
 
 # All platforms need the eigen template library
 # git clone https://github.com/libigl/eigen
@@ -22,9 +22,12 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (MSVC)
+  message(INFO "You should see this!")
   set(wxWidgets_USE_UNICODE ON)
   set(wxWidgets_USE_UNIVERSAL OFF)
-  set(wxWidgets_USE_STATIC ON)
+  set(wxWidgets_USE_STATIC BOOL::ON)
+else (MSVC)
+  message(WARNING "You should not see this!")
 endif (MSVC)
 
 # Find the wxWidgets library
@@ -35,11 +38,13 @@ include(${wxWidgets_USE_FILE})
 # Add the source files
 if (MSVC)
   add_executable (${PACKAGE_NAME} WIN32 main.cpp)
+  set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
 else (MSVC)
+  message(WARNING "You should not see this.")
   add_executable (${PACKAGE_NAME} main.cpp)
 endif (MSVC)
 
-add_library(SObject STATIC
+add_library(SObject STATIC 
     SObject.cpp
     SObject.h
     xqsmatrix.h)

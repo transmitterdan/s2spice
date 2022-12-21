@@ -47,8 +47,10 @@ using namespace std;
 
 Sparam::Sparam(std::size_t _n) {
   Freq = 0.0;
-  S.set_row_count(_n);
-  S.set_col_count(_n);
+  dB.set_row_count(_n);
+  dB.set_col_count(_n);
+  Phase.set_row_count(_n);
+  Phase.set_col_count(_n);
 }
 
 SObject::SObject() {
@@ -231,15 +233,13 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
       double offset = 0;
       double prevph = 0;
       for (auto& sparam : SData) {
-        double phs(atan2(sparam.S(i, j).imag(), sparam.S(i, j).real()));
-        double mag(20.0 * log10(abs(sparam.S(i, j))));
-        phs *= 180.0 / M_PI;
-
+        double phs = sparam.Phase(i,j);
+        double dB = sparam.dB(i, j);
         if ((abs(phs - prevph)) > 180.0) {
           offset = offset - 360.0 * (double)signbit(prevph - phs);
         }
         prevph = phs;
-        snprintf(out, charMAX, "+(%14eHz,%14e,%14e)\n", sparam.Freq, mag,
+        snprintf(out, charMAX, "+(%14eHz,%14e,%14e)\n", sparam.Freq, dB,
                  phs + offset);
         output_stream << out;
       }
@@ -310,38 +310,53 @@ void SObject::Convert2S() {
 
   auto i = tokens.begin();
   while (i != tokens.end()) {
-    double mag, angle;
     S.Freq = fUnits * atof(tokens.front().c_str());
     i = tokens.erase(i);
-    for (auto j = 0; j < numPorts; j++) {
-      for (auto k = 0; k < numPorts; k++) {
-        if (format == "MA") {
+    if (format == "MA") {
+      for (auto j = 0; j < numPorts; j++) {
+        for (auto k = 0; k < numPorts; k++) {
+          double mag, angle;
           mag = stod(tokens.front());
           i = tokens.erase(i);
           angle = stod(tokens.front());
           i = tokens.erase(i);
-        } else if (format == "DB") {
-          mag = stod(tokens.front());
-          i = tokens.erase(i);
-          mag = pow(10.0, mag / 20.0);
-          angle = stod(tokens.front());
-          i = tokens.erase(i);
-        } else if (format == "RI") {
-          double re = stod(tokens.front());
-          i = tokens.erase(i);
-          double im = stod(tokens.front());
-          i = tokens.erase(i);
-          mag = sqrt(re * re + im * im);
-          angle = atan2(im, re);
-        } else {
-          wxLogError(_("Cannot read file '%s'."), snp_file.GetFullPath());
-          return;
+          S.dB(j, k) = 20.0*log10(mag);
+          S.Phase(j, k) = angle;
         }
-        S.S(j, k) = complex<double>(mag * cos(angle * M_PI / 180.0),
-                                    mag * sin(angle * M_PI / 180.0));
+      }
+    } else if (format == "DB") {
+      for (auto j = 0; j < numPorts; j++) {
+        for (auto k = 0; k < numPorts; k++) {
+          double dB, angle;
+          dB = stod(tokens.front());
+          i = tokens.erase(i);
+          angle = stod(tokens.front());
+          i = tokens.erase(i);
+          S.dB(j, k) = dB;
+          S.Phase(j, k) = angle;
+        }
+      }
+    } else if (format == "RI") {
+      for (auto j = 0; j < numPorts; j++) {
+        for (auto k = 0; k < numPorts; k++) {
+          double re, im;
+          re = stod(tokens.front());
+          i = tokens.erase(i);
+          im = stod(tokens.front());
+          i = tokens.erase(i);
+          S.dB(j, k) = 20 * log10(sqrt(re * re + im * im));
+          S.Phase(j, k) = atan2(im, re);
+        }
       }
     }
-    if (numPorts == 2) swap(S.S(0, 1), S.S(1, 0));
+    else {
+        wxLogError(_("Cannot read file '%s'."), snp_file.GetFullPath());
+        return;
+    }
+    if (numPorts == 2) {
+      swap(S.dB(0, 1), S.dB(1, 0));
+      swap(S.Phase(0, 1), S.Phase(1, 0));
+    }
     SData.push_back(S);
   }
 }

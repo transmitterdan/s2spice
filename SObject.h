@@ -43,7 +43,8 @@ public:
   Sparam(){};
   Sparam(std::size_t n);
   double Freq;
-  XQSMatrix<complex<double>> S;
+  XQSMatrix<double> dB;
+  XQSMatrix<double> Phase;
 };
 
 class SObject : public wxObject {
