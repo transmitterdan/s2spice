@@ -1,7 +1,7 @@
 /***************************************************************************
  *
  * Project:  S2spice
- * Purpose:  S2spice wxWidgets Program converts S-parameter files to Spice
+ * Purpose:  S2spice - wxWidgets Program converts S-parameter files to Spice
  *           subcircuit library file.
  * Author:   Dan Dickey
  *
@@ -52,8 +52,6 @@ using namespace std;
 #include "xqsmatrix.h"
 
 using namespace std;
-
-#define MAX_PORTS 99  // maximum number of ports we will handle
 
 // This is the main class for the program
 class MyApp : public wxApp {
@@ -110,7 +108,7 @@ wxIMPLEMENT_APP(MyApp);
 // This is the implementation of the MyApp class
 bool MyApp::OnInit() {
   // Create the main window
-  MyFrame* frame = new MyFrame("S2spice", wxPoint(50, 50), wxSize(640, 480));
+  MyFrame* frame = new MyFrame(_("S2spice"), wxPoint(50, 50), wxSize(640, 480));
   frame->Show(true);
 
   return true;
@@ -135,7 +133,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   SetMenuBar(menuBar);
 
   CreateStatusBar();
-  SetStatusText("S2spice: Select OPEN to start converting Touchstone files.");
+  SetStatusText(_("S2spice: Select OPEN to start converting Touchstone files."));
 
   // Instead of writing an event handler we use a little functor
   // to connect to the menu events
@@ -148,10 +146,10 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
       OnMkLIB(event);
     else if (event.GetId() == wxID_ABOUT)
       wxMessageBox(
-          "Utility to convert Touchstone (aka SnP files) into LTspice\n"
+          _("Utility to convert Touchstone (aka SnP files) into LTspice\n"
           "subcircuit file. Open .SnP file, then use buttons to create\n"
-          " LIB and ASY files.",
-          "About S2spice", wxOK | wxICON_INFORMATION);
+          "library (LIB) and symbol (ASY) files."),
+          _("About S2spice"), wxOK | wxICON_INFORMATION);
     else if (event.GetId() == wxID_EXIT)
       OnQuit(event);
     else
@@ -159,19 +157,19 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   });
   // Create the "Open" button
   wxButton* openButton =
-      new wxButton(this, ID_OPEN, "Open", wxPoint(10, 10), wxSize(80, 30));
+      new wxButton(this, ID_OPEN, _("Open"), wxPoint(10, 10), wxSize(80, 30));
 
   // Create the "Read" button
-  wxButton* libButton = new wxButton(this, ID_MKLIB, "Save LIB",
+  wxButton* libButton = new wxButton(this, ID_MKLIB, _("Save LIB"),
                                      wxPoint(100, 10), wxSize(80, 30));
 
   // Create the "Symbol" button
-  wxButton* symButton = new wxButton(this, ID_MKSYM, "Save SYM",
+  wxButton* symButton = new wxButton(this, ID_MKSYM, _("Save SYM"),
                                      wxPoint(190, 10), wxSize(80, 30));
 
   // Create the "Quit" button
   wxButton* quitButton =
-      new wxButton(this, ID_QUIT, "Quit", wxPoint(280, 10), wxSize(80, 30));
+      new wxButton(this, ID_QUIT, _("Quit"), wxPoint(280, 10), wxSize(80, 30));
 }
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
@@ -191,7 +189,7 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   bool res = SData1.writeLibFile(this);
   if (res)
     SetStatusText(
-        wxString::Format("S2spice: Library object %s successfully created.",
+        wxString::Format(_("S2spice: Library object %s successfully created."),
                          SData1.getSNPfile().GetName()));
 }
 
@@ -202,12 +200,12 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
   bool res = SData1.writeSymFile(this);
   if (res)
     SetStatusText(
-        wxString::Format("S2spice: Symbol object %s successfully created.",
+        wxString::Format(_("S2spice: Symbol object %s successfully created."),
                          SData1.getASYfile().GetName()));
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
   SData1.readSfile(this);
-  SetStatusText(wxString::Format("S2spice: Data successfully imported from %s.",
+  SetStatusText(wxString::Format(_("S2spice: Data successfully imported from %s."),
                                  SData1.getSNPfile().GetFullPath()));
 }

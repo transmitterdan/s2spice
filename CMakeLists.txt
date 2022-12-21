@@ -40,7 +40,9 @@ else (MSVC)
 endif (MSVC)
 
 add_library(SObject STATIC
-    SObject.cpp)
+    SObject.cpp
+    SObject.h
+    xqsmatrix.h)
 
 # Link the executable to the wxWidgets library
 target_link_libraries(${PACKAGE_NAME} ${wxWidgets_LIBRARIES} SObject)

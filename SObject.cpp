@@ -172,7 +172,83 @@ bool SObject::writeLibFile(wxWindow* parent) {
                      parent) == wxNO)
       return false;
   }
-  bool res = WriteLIB(libFile);
+  return WriteLIB(libFile);
+}
+
+bool SObject::WriteLIB(const wxFileName& libFile) {
+  lib_file = libFile;
+  string libName(lib_file.GetFullPath().ToStdString());
+
+  ofstream output_stream(libName);
+  if (!output_stream) {
+    wxLogError("Cannot create file '%s'.", libName);
+    return false;
+  }
+  output_stream << ".SUBCKT " << lib_file.GetName() << " ";
+  for (int i = 0; i < numPorts + 1; i++) output_stream << " " << i + 1;
+  output_stream << "\n";
+  output_stream
+      << "* Pin " << numPorts + 1
+      << " is the reference plane (usually it should be connected to GND)\n";
+
+  for (int i = 0; i < comment_strings.Count(); i++) {
+    output_stream << "*" << comment_strings[i].Mid(1) << "\n";
+  }
+  output_stream << "*" << option_string.Mid(1) << "\n";
+  output_stream << "*";
+
+  for (int i = 0; i < numPorts; i++) {
+    output_stream << " Z" << i + 1 << " = " << Z0;
+  }
+  output_stream << "\n";
+
+  /* define resistances for Spice model */
+
+  for (int i = 0; i < numPorts; i++) {
+    output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
+                                       10 * (i + 1), -Z0)
+                          .c_str());
+    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1, 10 * (i + 1),
+                                       10 * (i + 1) + 1, 2 * Z0));
+  }
+
+  const int charMAX = 2048;
+  output_stream << "\n";
+  char* out = new char[charMAX + 1];
+  for (int i = 0; i < numPorts; i++) {
+    for (int j = 0; j < numPorts; j++) {
+      snprintf(out, charMAX, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
+      output_stream << out;
+      if (j + 1 == numPorts) {
+        snprintf(out, charMAX, "E%d%d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1,
+                 j + 1, i + 1, j + 1, numPorts + 1, 10 * (j + 1), numPorts + 1);
+        output_stream << out;
+      } else {
+        snprintf(out, charMAX, "E%d%d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
+                 j + 1, i + 1, j + 1, i + 1, j + 2, 10 * (j + 1), numPorts + 1);
+        output_stream << out;
+      }
+      double offset = 0;
+      double prevph = 0;
+      for (auto& sparam : SData) {
+        double phs(atan2(sparam.S(i, j).imag(), sparam.S(i, j).real()));
+        double mag(20.0 * log10(abs(sparam.S(i, j))));
+        phs *= 180.0 / M_PI;
+
+        if ((abs(phs - prevph)) > 180.0) {
+          offset = offset - 360.0 * (double)signbit(prevph - phs);
+        }
+        prevph = phs;
+        snprintf(out, charMAX, "+(%14eHz,%14e,%14e)\n", sparam.Freq, mag,
+                 phs + offset);
+        output_stream << out;
+      }
+      output_stream << "\n";
+    }
+  }
+  delete[] out;
+  output_stream << ".ENDS * " << lib_file.GetName() << "\n";
+  data_saved = true;
   return true;
 }
 
@@ -186,8 +262,7 @@ bool SObject::writeSymFile(wxWindow* parent) {
                      parent) == wxNO)
       return false;
   }
-  bool res = WriteASY(asyFile);
-  return true;
+  return WriteASY(asyFile);
 }
 
 bool SObject::WriteASY(const wxFileName& asyFile) {
@@ -204,7 +279,7 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
   sym = Symbol(asyFile.GetName().ToStdString());
 
   if (sym.empty()) {
-    wxLogError("Error creating symbol '%s'.", asyFile.GetName());
+    wxLogError(_("Error creating symbol '%s'."), asyFile.GetName());
     return false;
   }
 
@@ -259,7 +334,7 @@ void SObject::Convert2S() {
           mag = sqrt(re * re + im * im);
           angle = atan2(im, re);
         } else {
-          wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
+          wxLogError(_("Cannot read file '%s'."), snp_file.GetFullPath());
           return;
         }
         S.S(j, k) = complex<double>(mag * cos(angle * M_PI / 180.0),
@@ -394,79 +469,4 @@ vector<string> SObject::Symbol(const string& symname) const {
       break;
   }
   return symbol;
-}
-
-bool SObject::WriteLIB(const wxFileName& libFile) {
-  lib_file = libFile;
-  string libName(lib_file.GetFullPath().ToStdString());
-
-  ofstream output_stream(libName);
-  if (!output_stream) {
-    wxLogError("Cannot create file '%s'.", libName);
-    return false;
-  }
-  output_stream << ".SUBCKT " << lib_file.GetName() << " ";
-  for (int i = 0; i < numPorts + 1; i++) output_stream << " " << i + 1;
-  output_stream << "\n";
-  output_stream
-      << "* Pin " << numPorts + 1
-      << " is the reference plane (usually it should be connected to GND)\n";
-
-  for (int i = 0; i < comment_strings.Count(); i++) {
-    output_stream << "*" << comment_strings[i].Mid(1) << "\n";
-  }
-  output_stream << "*" << option_string.Mid(1) << "\n";
-  output_stream << "*";
-
-  for (int i = 0; i < numPorts; i++) {
-    output_stream << " Z" << i + 1 << " = " << Z0;
-  }
-  output_stream << "\n";
-
-  /* define resistances for Spice model */
-
-  for (int i = 0; i < numPorts; i++) {
-    output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
-                                       10 * (i + 1), -Z0)
-                          .c_str());
-    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1, 10 * (i + 1),
-                                       10 * (i + 1) + 1, 2 * Z0));
-  }
-  output_stream << "\n";
-  char* out = new char[2049];
-  for (int i = 0; i < numPorts; i++) {
-    for (int j = 0; j < numPorts; j++) {
-      snprintf(out, 2048, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
-      output_stream << out;
-      if (j + 1 == numPorts) {
-        snprintf(out, 2048, "E%d%d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
-                 i + 1, j + 1, numPorts + 1, 10 * (j + 1), numPorts + 1);
-        output_stream << out;
-      } else {
-        snprintf(out, 2048, "E%d%d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, i + 1, j + 1, i + 1, j + 2, 10 * (j + 1), numPorts + 1);
-        output_stream << out;
-      }
-      double offset = 0;
-      double prevph = 0;
-      for (auto& sparam : SData) {
-        double phs(atan2(sparam.S(i, j).imag(), sparam.S(i, j).real()));
-        double mag(20.0 * log10(abs(sparam.S(i, j))));
-        phs *= 180.0 / M_PI;
-
-        if ((abs(phs - prevph)) > 180.0) {
-          offset = offset - 360.0 * (double)signbit(prevph - phs);
-        }
-        prevph = phs;
-        snprintf(out, 2048, "+(%14eHz,%14e,%14e)\n", sparam.Freq, mag,
-                 phs + offset);
-        output_stream << out;
-      }
-      output_stream << "\n";
-    }
-  }
-  delete[] out;
-  output_stream << ".ENDS * " << lib_file.GetName() << "\n";
-  data_saved = true;
-  return true;
 }
