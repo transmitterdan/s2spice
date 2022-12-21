@@ -28,7 +28,9 @@
  **************************************************************************/
 #if !defined(__SOBJECT)
 #define __SOBJECT
+#if defined(_MSC_VER)
 #pragma once
+#endif
 
 using namespace std;
 
