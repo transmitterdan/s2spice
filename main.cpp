@@ -95,15 +95,13 @@ private:
   };
 };
 // This is the event table for the program
-wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
-  EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
-  EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
-  EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
-  EVT_BUTTON(ID_QUIT, MyFrame::OnQuit)
-wxEND_EVENT_TABLE()
+wxBEGIN_EVENT_TABLE(MyFrame, wxFrame) EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
+    EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
+        EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
+            EVT_BUTTON(ID_QUIT, MyFrame::OnQuit) wxEND_EVENT_TABLE()
 
-// This is the main entry point for the program
-wxIMPLEMENT_APP(MyApp);
+    // This is the main entry point for the program
+    wxIMPLEMENT_APP(MyApp);
 
 // This is the implementation of the MyApp class
 bool MyApp::OnInit() {
@@ -133,7 +131,8 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   SetMenuBar(menuBar);
 
   CreateStatusBar();
-  SetStatusText(_("S2spice: Select OPEN to start converting Touchstone files."));
+  SetStatusText(
+      _("S2spice: Select OPEN to start converting Touchstone files."));
 
   // Instead of writing an event handler we use a little functor
   // to connect to the menu events
@@ -147,8 +146,8 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     else if (event.GetId() == wxID_ABOUT)
       wxMessageBox(
           _("Utility to convert Touchstone (aka SnP files) into LTspice\n"
-          "subcircuit file. Open .SnP file, then use buttons to create\n"
-          "library (LIB) and symbol (ASY) files."),
+            "subcircuit file. Open .SnP file, then use buttons to create\n"
+            "library (LIB) and symbol (ASY) files."),
           _("About S2spice"), wxOK | wxICON_INFORMATION);
     else if (event.GetId() == wxID_EXIT)
       OnQuit(event);
@@ -206,10 +205,10 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
   if (SData1.readSfile(this))
-    SetStatusText(wxString::Format(_("S2spice: Data successfully imported from %s."),
-                                 SData1.getSNPfile().GetFullPath()));
-  else
     SetStatusText(
-        wxString::Format(_("S2spice: Data import failed from %s!"),
+        wxString::Format(_("S2spice: Data successfully imported from %s."),
                          SData1.getSNPfile().GetFullPath()));
+  else
+    SetStatusText(wxString::Format(_("S2spice: Data import failed from %s!"),
+                                   SData1.getSNPfile().GetFullPath()));
 }
