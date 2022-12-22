@@ -54,7 +54,7 @@ public:
   SObject();
   int nPorts(void) { return numPorts; }
   int nFreq(void) { return SData.size(); }
-  bool dataSaved(void) { return (data_strings.empty() || data_saved); }
+  bool dataSaved(void) { return (SData.empty() || data_saved); }
   bool readSfile(wxWindow* parent);
   bool writeLibFile(wxWindow* parent);
   bool writeSymFile(wxWindow* parent);

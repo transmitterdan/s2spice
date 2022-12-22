@@ -66,9 +66,13 @@ public:
 
 private:
   SObject SData1;
+  bool m_bFileNotSaved;
 
   // This function is called when the "Open" button is clicked
   void OnOpen(wxCommandEvent& event);
+
+  // This function is called when Frame is trying to close
+  void OnClose(wxCloseEvent& event);
 
   // This function is called when the "Read" button is clicked
   void OnMkLIB(wxCommandEvent& event);
@@ -95,13 +99,16 @@ private:
   };
 };
 // This is the event table for the program
-wxBEGIN_EVENT_TABLE(MyFrame, wxFrame) EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
-    EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
-        EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
-            EVT_BUTTON(ID_QUIT, MyFrame::OnQuit) wxEND_EVENT_TABLE()
+wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
+  EVT_BUTTON(ID_OPEN,  MyFrame::OnOpen)
+  EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
+  EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
+  EVT_BUTTON(ID_QUIT,  MyFrame::OnQuit)
+  EVT_CLOSE(MyFrame::OnClose)
+wxEND_EVENT_TABLE()
 
-    // This is the main entry point for the program
-    wxIMPLEMENT_APP(MyApp);
+// This is the main entry point for the program
+wxIMPLEMENT_APP(MyApp);
 
 // This is the implementation of the MyApp class
 bool MyApp::OnInit() {
@@ -173,7 +180,19 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
   // shut down the main frame
-  Close(true);
+  Close(false);
+}
+
+void MyFrame::OnClose(wxCloseEvent& event) {
+  if (event.CanVeto() && !SData1.dataSaved()) {
+    if (wxMessageBox(_("The data has not been saved in library... continue closing?"),
+                     _("Please confirm"), wxICON_QUESTION | wxYES_NO) != wxYES) {
+      event.Veto();
+      return;
+    }
+  }
+
+  event.Skip();
 }
 
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
