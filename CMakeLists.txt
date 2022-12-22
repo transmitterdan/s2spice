@@ -28,8 +28,6 @@ if (MSVC)
   set(wxWidgets_USE_UNICODE ON)
   set(wxWidgets_USE_UNIVERSAL OFF)
   set(wxWidgets_USE_STATIC BOOL::ON)
-else (MSVC)
-  message(WARNING "You should not see this!")
 endif (MSVC)
 
 # Find the wxWidgets library
@@ -42,7 +40,6 @@ if (MSVC)
   add_executable (${PACKAGE_NAME} WIN32 main.cpp ${PACKAGE_NAME}.rc)
   set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
 else (MSVC)
-  message(WARNING "You should not see this.")
   add_executable (${PACKAGE_NAME} main.cpp)
 endif (MSVC)
 
