@@ -2,6 +2,9 @@ REM Run this batch file in the folder where you cloned s2spice.  For example, if
 REM cd myProjectsFolder
 REM git clone https:://github.com/transmitterdan/s2spice
 REM .\s2spice\setup_wxWidgets.bat
+REM ***************************************************************************
+REM * SETUP wxWidgets librarys.  We use the DLL (or shared library) versions. *    
+REM ***************************************************************************
 set "wxVER=3.2.1"
 for /f "tokens=*" %%a in ('cd') do (
     set VAR=%%a
@@ -22,6 +25,11 @@ for /f "tokens=*" %%a in ('dir /b %wxWidgets_ROOT_DIR%\lib') do (
 )
 set "WxWidgets_LIB_DIR=%wxWidgets_ROOT_DIR%\lib\%VAR%"
 set "Path=%wxWidgets_LIB_DIR%;%PATH%
+REM ***************************************************************************
+REM * Now we can build s2spice from sources.  We create both a release and a  *
+REM * debug version.  The debug version has better error messages if an error *
+REM * should happen.                                                          *
+REM ***************************************************************************
 cd s2spice
 if exist .\build rmdir /s /q .\build
 mkdir build && cd build && cmake -A wIN32 .. && cmake --build . --config Release && cmake --build . --config Debug
@@ -29,4 +37,7 @@ if %errorlevel% == 0 goto :ok
 @echo Error during build proces
 exit /b 1
 :ok
+REM ***************************************************************************
+REM * Everything went ok without an error so we can try to run s2spice.       *
+REM ***************************************************************************
 Release\s2spice
