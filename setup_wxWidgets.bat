@@ -9,6 +9,7 @@ for /f "tokens=*" %%a in ('cd') do (
 set "wxWIN=%VAR%\wxWidgets-%wxVER%"
 set "wxWidgets_ROOT_DIR=%wxWIN%"
 curl --output "wxWidgets-Dev-%wxVER%.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_Dev.7z"
+PAUSE
 7z x "wxWidgets-Dev-%wxVER%.7z" -o%WXWIN%
 del "wxWidgets-Dev-%wxVER%.7z"
 curl --output "wxWidgets-headers.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxWidgets-%wxVER%-headers.7z"
