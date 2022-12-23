@@ -76,7 +76,9 @@ cmake --build .
 
 ### Building for Windows
 Install 7zip: https://www.7-zip.org/download.html
+
 Install MS Visual Studio 2022 Community edition: https://visualstudio.microsoft.com/vs/community/
+
 Open a "x86 Native Tools Command Prompt for VS 2022" window and issue these commands
 ```
 REM setup a project folder
