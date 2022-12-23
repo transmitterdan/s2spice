@@ -83,6 +83,6 @@ Open a "x86 Native Tools Command Prompt for VS 2022" window and create a folder 
 ```
 cd c:\myProjects
 git clone https://github.com/transmitterdan/s2spice.git
-.\s2spice\setup
+.\s2spice\setup_wxWidgets.bat
 ```
 If all goes well you should see the s2spice window open.  There are 2 executables created, one in the s2spice\build\Release folder, and the other in s2spice\build\Debug folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.
