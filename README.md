@@ -83,7 +83,6 @@ Open a "x86 Native Tools Command Prompt for VS 2022" window and create a folder 
 ```
 REM setup a project folder
 cd c:\myProjects
-cd myProjects
 git clone https://github.com/transmitterdan/s2spice.git
 .\s2spice\setup
 ```
