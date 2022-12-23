@@ -86,5 +86,5 @@ mkdir myProjects
 cd myProjects
 git clone https://github.com/transmitterdan/s2spice.git
 .\s2spice\setup
-If all goes well you should see the s2spice window open.  There are 2 executables, one in the s2spice\build\Release folder, and the other in s2spice\build\Debug folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.
 ```
+If all goes well you should see the s2spice window open.  There are 2 executables, one in the s2spice\build\Release folder, and the other in s2spice\build\Debug folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.
