@@ -17,7 +17,6 @@ del "wxWidgets-%wxVER%-Release.7z"
 curl -L --output "wxWidgets-headers.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxWidgets-%wxVER%-headers.7z"
 7z x -o%WXWIN% "wxWidgets-headers.7z"
 del "wxWidgets-headers.7z"
-cd s2spice
 for /f "tokens=*" %%a in ('dir /b %wxWidgets_ROOT_DIR%\lib') do (
     set VAR=%%a
 )
