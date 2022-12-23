@@ -76,40 +76,14 @@ cmake --build .
 ```
 
 ### Building for Windows
-Release build using MSVC:
-This program uses DLLs from the Visual C redistributable from Microsoft as well as wxWidgets DLLs.  Here are some hints to copy these files to the Release folder where s2spice.exe is found. You can learn more at
-https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
-https://www.wxwidgets.org/downloads/
-
-Install the Microsoft C runtime and wxWidgets libraries from above web sites. Make note where you put the files. Then create a folder where you will build s2spice.  Open a command prompt and navigate to the project folder.  These command examples should help you build but you will have to change some of the paths to match where you put the MSVC runtime and wxWidgets headers and library files.
-
+Install 7zip: https://www.7-zip.org/download.html
+Install MS Visual Studio 2022 Community edition: https://visualstudio.microsoft.com/vs/community/
+Open a "x86 Native Tools Command Prompt for VS 2022" window and issue these commands
 ```
+REM setup a project folder
+mkdir myProjects
+cd myProjects
 git clone https://github.com/transmitterdan/s2spice.git
-git clone https://github.com/libigl/eigen.git
-cd build
-mkdir Release
-copy "C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x86\*.*" Release
-copy \oa\wxWidgets\lib\vc14x_dll\wxmsw32u_core_vc.dll Release
-copy \oa\wxWidgets\lib\vc14x_dll\wxbase32u_vc.dll Release
-del CMakeCache.txt
-cmake .. -G "Visual Studio 17 2022" -AWIN32 -DWX_LIB_DIR="\oa\wxWidgets\lib"
-cmake --build . --config Release
-cd ..\Test
-..\build\Release\s2spice.exe
-```
-If all goes well you should see the s2spice window open.
-
-Windows dependencies:
-```
-    wxbase32u_vc.dll
-    wxmsw32u_core_vc.dll
-    MSVCP140.dll
-    VCRUNTIME140.dll
-    api-ms-win-crt-runtime-l1-1-0.dll
-    api-ms-win-crt-stdio-l1-1-0.dll
-    api-ms-win-crt-filesystem-l1-1-0.dll
-    api-ms-win-crt-heap-l1-1-0.dll
-    api-ms-win-crt-convert-l1-1-0.dll
-    api-ms-win-crt-math-l1-1-0.dll
-    api-ms-win-crt-locale-l1-1-0.dll
+.\s2spice\setup
+If all goes well you should see the s2spice window open.  There are 2 executables, one in the s2spice\build\Release folder, and the other in s2spice\build\Debug folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.
 ```
