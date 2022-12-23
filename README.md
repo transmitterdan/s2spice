@@ -67,7 +67,6 @@ Release build on debian like (e.g. Ubuntu):
 sudo apt update
 sudo apt install libwxbase3.0-dev  ; or whatever is latest version of wxWidgets
 git clone https://github.com/transmitterdan/s2spice.git
-git clone https://github.com/libigl/eigen.git
 cd s2spice
 mkdir build
 cd build
