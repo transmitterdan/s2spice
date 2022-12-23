@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 
-# On Windows use this to invoke cmake
+# REM On Windows use this to invoke cmake
 # cd build
-# cmake -AWIN32 -G "Visual Studio 17 2022" .. -DWX_LIB_DIR="%wxWidgets_LIB_DIR%"
+# cmake -AWIN32 -G "Visual Studio 17 2022" ..
+# REM  build release and debug versions
+# cmake --build . --config Release && cmake --build . --config Debug
 
 # All platforms need the eigen template library
 # git clone https://github.com/libigl/eigen
