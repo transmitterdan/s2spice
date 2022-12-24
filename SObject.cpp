@@ -1,4 +1,19 @@
 /***************************************************************************
+ *  s2spice  Copyright (C) 2023 by Dan Dickey                              *
+ *                                                                         *
+ * This program is free software: you can redistribute it and/or modify    *
+ * it under the terms of the GNU General Public License as published by    *
+ * the Free Software Foundation, either version 3 of the License, or       *
+ * (at your option) any later version.                                     *
+ *                                                                         *
+ * This program is distributed in the hope that it will be useful,         *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ * GNU General Public License for more details.                            *
+ *                                                                         *
+ * You should have received a copy of the GNU General Public License       *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.  *
+ ***************************************************************************
  *
  * Project:  S2spice
  * Purpose:  S2spice wxWidgets Program converts S-parameter files to Spice
@@ -8,32 +23,16 @@
  * Based on: s2spice.c
  * (https://groups.io/g/LTspice/files/z_yahoo/Tut/S-Parameter/s2spice.doc)
  *
- ***************************************************************************
- *   Copyright (C) 2023 by Dan Dickey                                      *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,  USA.         *
- **************************************************************************/
+ ***************************************************************************/
 
-#include <wx/wx.h>
+#include <wx/wxprec.h>
 #ifndef WX_PRECOMP
+#include <wx/wx.h>
+#endif /* WX_PRECOMP */
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/filename.h>
 #include <wx/tokenzr.h>
-#endif /* WX_PRECOMP */
 
 #include <sstream>
 #include <iostream>
@@ -60,7 +59,14 @@ SObject::SObject() {
   Z0 = 50;
 }
 
-bool SObject::readSfile(wxWindow* parent) {
+SObject::~SObject() {
+  SData.clear();
+  comment_strings.clear();
+
+  wxObject::~wxObject();
+}
+
+bool SObject::openSFile(wxWindow* parent) {
 #if defined(_WIN32) || defined(_WIN64)
   char const* WildcardStr = "S paramter (*.snp)|*.s?p|All files (*.*)|*.*";
 #else
@@ -81,11 +87,18 @@ bool SObject::readSfile(wxWindow* parent) {
     return false;  // the user changed idea...
 
   wxBusyCursor wait;
+  wxFileName fileName = openFileDialog.GetPath();
+  return readSFile(fileName);
+}
+
+bool SObject::readSFile(wxFileName& fileName) {
+
   SData.clear();
-  snp_file.Assign(openFileDialog.GetPath());
+  wxString cwd = wxGetCwd();
+  snp_file.Assign(fileName);
   wxFileInputStream input_stream(snp_file.GetFullPath());
   if (!input_stream.IsOk()) {
-    wxLogError("Cannot open file '%s'.", snp_file.GetFullPath());
+    wxLogError(_("%s:%d Cannot open file '%s'."), __FILE__, __LINE__, snp_file.GetFullPath());
     return false;
   }
   wxString N(snp_file.GetExt().Mid(1, 1));
@@ -95,7 +108,7 @@ bool SObject::readSfile(wxWindow* parent) {
   } else
     numPorts = 0;
   if (numPorts < 1) {
-    wxLogError("Cannot read file '%s'.", snp_file.GetFullPath());
+    wxLogError(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."), __FILE__, __LINE__, snp_file.GetFullPath());
     return false;
   }
   wxTextInputStream text_input(input_stream);
@@ -186,7 +199,7 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
 
   ofstream output_stream(libName);
   if (!output_stream) {
-    wxLogError("Cannot create file '%s'.", libName);
+    wxLogError(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."), __FILE__, __LINE__ , libName);
     return false;
   }
   output_stream << ".SUBCKT " << lib_file.GetName() << " ";
@@ -272,7 +285,7 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
   asy_file = asyFile;
   if (numPorts < 1) {
     wxString mess = wxString::Format(
-        _("No data. Please open SnP file and make LIB first."));
+        _("%s:%d No data. Please open SnP file and make LIB first."),__FILE__, __LINE__);
     wxLogError(mess);
     return false;
   }
@@ -282,14 +295,14 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
   sym = Symbol(asyFile.GetName().ToStdString());
 
   if (sym.empty()) {
-    wxLogError(_("Error creating symbol '%s'."), asyFile.GetName());
+    wxLogError(_("%s:%d Error creating symbol '%s'."), __FILE__, __LINE__, asyFile.GetName());
     return false;
   }
 
   string symName(asyFile.GetFullPath().ToStdString());
   ofstream output_stream(symName);
   if (!output_stream) {
-    wxLogError("Cannot create file '%s'.", symName);
+    wxLogError(_("%s:%d Cannot create file '%s'."), __FILE__, __LINE__, symName);
     return false;
   }
   for (auto i = sym.begin(); i != sym.end(); i++) {
@@ -345,7 +358,8 @@ bool SObject::Convert2S() {
         }
       }
     } else {
-      wxLogError(_("Cannot read file '%s'."), snp_file.GetFullPath());
+      wxLogError(wxString::Format("%s:%d Cannot read file '%s'."),__FILE__,__LINE__,
+                 snp_file.GetFullPath());
       return false;
     }
     if (numPorts == 2) {

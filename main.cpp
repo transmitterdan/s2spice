@@ -1,39 +1,39 @@
 /***************************************************************************
+ *  s2spice  Copyright (C) 2023 by Dan Dickey                              *
+ *                                                                         *
+ * This program is free software: you can redistribute it and/or modify    *
+ * it under the terms of the GNU General Public License as published by    *
+ * the Free Software Foundation, either version 3 of the License, or       *
+ * (at your option) any later version.                                     *
+ *                                                                         *
+ * This program is distributed in the hope that it will be useful,         *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ * GNU General Public License for more details.                            *
+ *                                                                         *
+ * You should have received a copy of the GNU General Public License       *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.  *
+ ***************************************************************************
  *
  * Project:  S2spice
- * Purpose:  S2spice - wxWidgets Program converts S-parameter files to Spice
+ * Purpose:  S2spice wxWidgets Program converts S-parameter files to Spice
  *           subcircuit library file.
  * Author:   Dan Dickey
  *
- * Base on: s2spice.c
+ * Based on: s2spice.c
  * (https://groups.io/g/LTspice/files/z_yahoo/Tut/S-Parameter/s2spice.doc)
  *
- ***************************************************************************
- *   Copyright (C) 2023 by Dan Dickey                                      *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,  USA.         *
- **************************************************************************/
+ ***************************************************************************/
 
-#include <wx/wx.h>
+#include <wx/wxprec.h>
 #ifndef WX_PRECOMP
+#include <wx/wx.h>
+#endif /* WX_PRECOMP */
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/filename.h>
 #include <wx/tokenzr.h>
-#endif /* WX_PRECOMP */
+#include <wx/cmdline.h>
 
 #include "SObject.h"
 
@@ -57,6 +57,13 @@ using namespace std;
 class MyApp : public wxApp {
 public:
   virtual bool OnInit();
+  virtual void OnInitCmdLine(wxCmdLineParser& parser);
+  virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+  virtual int  OnExit();
+  virtual int  OnRun();
+
+private:
+  bool silent_mode;
 };
 
 // This is the main event handler for the program
@@ -66,7 +73,6 @@ public:
 
 private:
   SObject SData1;
-  bool m_bFileNotSaved;
 
   // This function is called when the "Open" button is clicked
   void OnOpen(wxCommandEvent& event);
@@ -110,8 +116,53 @@ wxEND_EVENT_TABLE()
 // This is the main entry point for the program
 wxIMPLEMENT_APP(MyApp);
 
+static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
+    {wxCMD_LINE_SWITCH, _("h"), _("help"),
+     _("displays help on the command line parameters"), wxCMD_LINE_VAL_NONE,
+     wxCMD_LINE_OPTION_HELP},
+    {wxCMD_LINE_SWITCH, _("l"), _("lib"), _("creates LIB library file"),
+     wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_SWITCH, _("s"), _("symbol"), _("creates ASY symbol file"),
+     wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_SWITCH, _("q"), _("quiet"), _("disables the GUI")},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+     wxCMD_LINE_PARAM_OPTIONAL},
+
+    {wxCMD_LINE_NONE}};
+
 // This is the implementation of the MyApp class
 bool MyApp::OnInit() {
+  // init wxApp parent object
+  if (!wxApp::OnInit()) return false;
+
   // Create the main window
   MyFrame* frame = new MyFrame(_("S2spice"), wxPoint(50, 50), wxSize(640, 480));
   frame->Show(true);
@@ -119,6 +170,76 @@ bool MyApp::OnInit() {
   return true;
 }
 
+int MyApp::OnExit() {
+  // clean up
+  return 0;
+}
+
+int MyApp::OnRun() {
+  int exitcode = wxApp::OnRun();
+  // wxTheClipboard->Flush();
+  if (exitcode != 0) return exitcode;
+}
+
+void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
+  parser.SetDesc(g_cmdLineDesc);
+  auto container = parser.GetArguments();
+  int cnt = parser.GetParamCount();
+  // must refuse '/' as parameter starter or cannot use "/path" style paths
+  //parser.SetSwitchChars(_("-"));
+
+}
+
+bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
+  // any remaining params are probably file names
+  if (parser.GetParamCount() == 0) return true;
+
+  // If silent mode requested don't start the GUI
+  // after handling all the comand line file names
+  silent_mode = parser.Found(_("q"));
+  SObject SData1;
+
+  for (int i = 0; i < parser.GetParamCount(); i++) {
+    string Param = parser.GetParam(i);
+    bool isWild = wxIsWild(Param);
+    if (isWild) {
+      wxString mess = wxString::Format(
+          _("%s:%d Wild card file names like '%s' are not handled (yet)."), __FILE__,
+          __LINE__, Param.c_str());
+      wxLogError(mess);
+      return false;
+    }
+    wxFileName snp_file(Param);
+    if (!SData1.readSFile(snp_file)) return false;
+
+    if (parser.Found(_("s"))) {
+      wxFileName asyFile = snp_file;
+      asyFile.SetExt("asy");
+      if (asyFile.Exists()) {
+        wxString mess = wxString::Format(
+            _("%s:%d ASY file %s already exists.  Delete it first."), __FILE__,
+            __LINE__, asyFile.GetFullPath().c_str());
+        wxLogError(mess);
+        return false;
+      }
+      if (!SData1.WriteASY(asyFile)) return false;
+    }
+
+    if (parser.Found(_("l"))) {
+      wxFileName libFile = snp_file;
+      libFile.SetExt("lib");
+      if (libFile.Exists()) {
+        wxString mess = wxString::Format(
+            _("%s:%d LIB file %s already exists.  Delete it first."), __FILE__,
+            __LINE__, libFile.GetFullPath().c_str());
+        wxLogError(mess);
+        return false;
+      }
+      if (!SData1.WriteLIB(libFile)) return false;
+    }
+  }
+  return !silent_mode;
+}
 // This is the implementation of the MyFrame class
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
@@ -152,10 +273,14 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
       OnMkLIB(event);
     else if (event.GetId() == wxID_ABOUT)
       wxMessageBox(
-          _("Utility to convert Touchstone (aka SnP files) into LTspice\n"
+          _("s2spice  Copyright (C) <2023>  Dan Dickey\n"
+            "This program comes with ABSOLUTELY NO WARRANTY.\n"
+            "This is free software, and you are welcome to redistribute it\n"
+            "under certain conditions.\n\n"
+            "Use to convert Touchstone (aka SnP) file into LTspice\n"
             "subcircuit file. Open .SnP file, then use buttons to create\n"
-            "library (LIB) and symbol (ASY) files."),
-          _("About S2spice"), wxOK | wxICON_INFORMATION);
+            "and save library (LIB) and symbol (ASY) files."),
+          _("About S2spice"), wxOK | wxICON_INFORMATION, this);
     else if (event.GetId() == wxID_EXIT)
       OnQuit(event);
     else
@@ -198,7 +323,7 @@ void MyFrame::OnClose(wxCloseEvent& event) {
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
   if (SData1.nPorts() < 1) {
-    wxString mess = wxString::Format(_("No data. Please open SnP file first."));
+    wxString mess = wxString::Format(_("%s:%d No data. Please open SnP file first."), __FILE__, __LINE__);
     wxLogError(mess);
     return;
   }
@@ -223,7 +348,7 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
-  if (SData1.readSfile(this))
+  if (SData1.openSFile(this))
     SetStatusText(
         wxString::Format(_("S2spice: Data successfully imported from %s."),
                          SData1.getSNPfile().GetFullPath()));

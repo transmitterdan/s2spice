@@ -1,4 +1,19 @@
 /***************************************************************************
+ *  s2spice  Copyright (C) 2023 by Dan Dickey                              *
+ *                                                                         *
+ * This program is free software: you can redistribute it and/or modify    *
+ * it under the terms of the GNU General Public License as published by    *
+ * the Free Software Foundation, either version 3 of the License, or       *
+ * (at your option) any later version.                                     *
+ *                                                                         *
+ * This program is distributed in the hope that it will be useful,         *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ * GNU General Public License for more details.                            *
+ *                                                                         *
+ * You should have received a copy of the GNU General Public License       *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.  *
+ ***************************************************************************
  *
  * Project:  S2spice
  * Purpose:  S2spice wxWidgets Program converts S-parameter files to Spice
@@ -8,24 +23,7 @@
  * Based on: s2spice.c
  * (https://groups.io/g/LTspice/files/z_yahoo/Tut/S-Parameter/s2spice.doc)
  *
- ***************************************************************************
- *   Copyright (C) 2023 by Dan Dickey                                      *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,  USA.         *
- **************************************************************************/
+ ***************************************************************************/
 #if !defined(__SOBJECT)
 #define __SOBJECT
 #if defined(_MSC_VER)
@@ -42,7 +40,7 @@ using namespace std;
 
 class Sparam {
 public:
-  Sparam(){};
+  Sparam() { Freq = 0.0; };
   Sparam(std::size_t n);
   double Freq;
   XQSMatrix<double> dB;
@@ -52,15 +50,19 @@ public:
 class SObject : public wxObject {
 public:
   SObject();
+  ~SObject();
   int nPorts(void) { return numPorts; }
   int nFreq(void) { return SData.size(); }
   bool dataSaved(void) { return (SData.empty() || data_saved); }
-  bool readSfile(wxWindow* parent);
+  bool openSFile(wxWindow* parent);
+  bool readSFile(wxFileName& fileName);
   bool writeLibFile(wxWindow* parent);
   bool writeSymFile(wxWindow* parent);
   wxFileName getSNPfile() { return snp_file; }
   wxFileName getASYfile() { return asy_file; }
   wxFileName getLIBfile() { return lib_file; }
+  bool WriteASY(const wxFileName& file);
+  bool WriteLIB(const wxFileName& file);
 
 private:
   vector<Sparam> SData;
@@ -87,10 +89,6 @@ private:
 
   // Read in .snp file
   bool ReadSNP(const wxFileName& file);
-  // Write .asy file
-  bool WriteASY(const wxFileName& file);
-  // Write .lib file
-  bool WriteLIB(const wxFileName& file);
 
   // Convert text to S-parameters
   bool Convert2S();
