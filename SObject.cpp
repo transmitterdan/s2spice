@@ -297,6 +297,7 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
   }
   delete[] out;
   output_stream << ".ENDS * " << lib_file.GetName() << "\n";
+  output_stream.close();
   data_saved = true;
   return true;
 }
