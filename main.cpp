@@ -209,6 +209,11 @@ bool MyApp::OnInit() {
   return true;
 }
 
+int MyApp::OnExit() {
+  // clean up
+  return 0;
+}
+
 // This is the implementation of the GUI
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
@@ -326,9 +331,4 @@ void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
   else
     SetStatusText(wxString::Format(_("S2spice: Data import failed from %s!"),
                                    SData1.getSNPfile().GetFullPath()));
-}
-
-int MyApp::OnExit() {
-  // clean up
-  return 0;
 }
