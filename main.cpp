@@ -183,8 +183,6 @@ int MyApp::OnRun() {
 
 void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
   parser.SetDesc(g_cmdLineDesc);
-  auto container = parser.GetArguments();
-  int cnt = parser.GetParamCount();
   // must refuse '/' as parameter starter or cannot use "/path" style paths
   //parser.SetSwitchChars(_("-"));
 

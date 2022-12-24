@@ -47,7 +47,7 @@ public:
   XQSMatrix<double> Phase;
 };
 
-class SObject : public wxObject {
+class SObject {
 public:
   SObject();
   ~SObject();

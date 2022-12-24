@@ -62,8 +62,6 @@ SObject::SObject() {
 SObject::~SObject() {
   SData.clear();
   comment_strings.clear();
-
-  wxObject::~wxObject();
 }
 
 bool SObject::openSFile(wxWindow* parent) {
