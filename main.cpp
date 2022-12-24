@@ -58,8 +58,8 @@ public:
   virtual bool OnInit();
   virtual void OnInitCmdLine(wxCmdLineParser& parser);
   virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
-  virtual int  OnExit();
-  virtual int  OnRun();
+  virtual int OnExit();
+  virtual int OnRun();
 
 private:
   bool silent_mode = 0;
@@ -125,29 +125,14 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
     {wxCMD_LINE_SWITCH, _("s"), _("symbol"), _("creates ASY symbol file"),
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_SWITCH, _("q"), _("quiet"), _("disables the GUI for command line usage")},
+    {wxCMD_LINE_SWITCH, _("q"), _("quiet"),
+     _("disables the GUI for command line usage")},
     {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
      wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
 
     {wxCMD_LINE_NONE}};
 
 // This is the implementation of the MyApp class
-bool MyApp::OnInit() {
-  // init wxApp parent object
-  if (!wxApp::OnInit()) return false;
-
-  // Create the main window
-  MyFrame* frame = new MyFrame(_("S2spice"), wxPoint(50, 50), wxSize(640, 480));
-  frame->Show(true);
-
-  return true;
-}
-
-int MyApp::OnExit() {
-  // clean up
-  return 0;
-}
-
 int MyApp::OnRun() {
   int exitcode = wxApp::OnRun();
   // wxTheClipboard->Flush();
@@ -157,8 +142,7 @@ int MyApp::OnRun() {
 void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
   parser.SetDesc(g_cmdLineDesc);
   // must refuse '/' as parameter starter or cannot use "/path" style paths
-  //parser.SetSwitchChars(_("-"));
-
+  // parser.SetSwitchChars(_("-"));
 }
 
 bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
@@ -213,7 +197,19 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
   }
   return !silent_mode;
 }
-// This is the implementation of the MyFrame class
+
+bool MyApp::OnInit() {
+  // init wxApp parent object
+  if (!wxApp::OnInit()) return false;
+
+  // Create the main window
+  MyFrame* frame = new MyFrame(_("S2spice"), wxPoint(50, 50), wxSize(640, 480));
+  frame->Show(true);
+
+  return true;
+}
+
+// This is the implementation of the GUI
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
   auto menuFile = new wxMenu();
@@ -330,4 +326,9 @@ void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
   else
     SetStatusText(wxString::Format(_("S2spice: Data import failed from %s!"),
                                    SData1.getSNPfile().GetFullPath()));
+}
+
+int MyApp::OnExit() {
+  // clean up
+  return 0;
 }

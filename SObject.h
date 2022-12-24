@@ -35,18 +35,22 @@ using namespace std;
 // std libraries we use
 #include <vector>
 #include <complex>
+#include <iomanip>
 
 #include "xqsmatrix.h"
 
 #if !defined(NDEBUG)
-#if !defined(DEBUG_MESSAGE)
-#define DEBUG_MESSAGE(MESS)                                             \
-  (wxMessageBox(wxString::Format(_("%s:%d ")+MESS, __FILE__, __LINE__), \
-                _("Debug s2spice"), wxOK | wxICON_INFORMATION));
+#if !defined(DEBUG_MESSAGE_BOX)
+#define DEBUG_MESSAGE_BOX(MESS)                                           \
+  {                                                                       \
+    ostringstream message;                                                \
+    message << "[" << __FILE__ << ":" << __LINE__ << "]" << endl << MESS; \
+    (wxMessageBox(message.str(), _("Debug s2spice"),                      \
+                  wxOK | wxICON_INFORMATION));                            \
+  }
 #endif
 #else
-#define DEBUG_MESSAGE(MESS) \
-  {}
+#define DEBUG_MESSAGE_BOX(MESS) {}
 #endif
 
 class Sparam {

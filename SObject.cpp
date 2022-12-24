@@ -89,20 +89,18 @@ bool SObject::openSFile(wxWindow* parent) {
   return readSFile(fileName);
 }
 
-bool SObject::readSFile(wxFileName& fileName) {
+bool SObject::readSFile(wxFileName& snp_file) {
 
   Clean();
+#if !defined(NDEBUG)
   wxString cwd = wxGetCwd();
-  
-  snp_file.Assign(fileName);
-  
-  if (!snp_file.Exists())
-    return false;
-  else {
+#endif
+  if (!snp_file.FileExists()) {
     wxString mess =
-        wxString::Format(_("%s:%d File '%s' does not exist."), __FILE__,
-                         __LINE__, snp_file.GetFullPath());
-    DEBUG_MESSAGE(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+        wxString::Format(_("[%s:%d]\nFile '%s' does not exist.\n"
+                           "Current working directory: '%s'"),
+                         __FILE__, __LINE__, snp_file.GetFullPath(), cwd);
+    DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
     if (be_quiet) {
       cerr << mess << endl;
     } else {
@@ -116,7 +114,7 @@ bool SObject::readSFile(wxFileName& fileName) {
     wxString mess =
         wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__, __LINE__,
                          snp_file.GetFullPath());
-    DEBUG_MESSAGE(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+    DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
     if (be_quiet) {
       cerr << mess << endl;
     } else {
@@ -213,7 +211,7 @@ bool SObject::readSFile(wxFileName& fileName) {
 bool SObject::writeLibFile(wxWindow* parent) {
   wxFileName libFile = snp_file;
   libFile.SetExt("lib");
-  if (libFile.Exists()) {
+  if (libFile.FileExists()) {
     wxString mess = wxString::Format(_("Library file '%s' exists. Overwrite?"),
                                      libFile.GetFullPath());
     if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
@@ -306,7 +304,7 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
 bool SObject::writeSymFile(wxWindow* parent) {
   wxFileName asyFile = snp_file;
   asyFile.SetExt("asy");
-  if (asyFile.Exists()) {
+  if (asyFile.FileExists()) {
     wxString mess = wxString::Format(_("Symbol file '%s' exists. Overwrite?"),
                                      asyFile.GetFullPath());
     if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
