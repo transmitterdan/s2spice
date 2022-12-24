@@ -57,6 +57,7 @@ SObject::SObject() {
   numPorts = 0;
   fUnits = 0;
   Z0 = 50;
+  be_quiet = false;
 }
 
 SObject::~SObject() {
@@ -93,10 +94,35 @@ bool SObject::readSFile(wxFileName& fileName) {
 
   SData.clear();
   wxString cwd = wxGetCwd();
+  
   snp_file.Assign(fileName);
+  
+  if (!snp_file.Exists())
+    return false;
+  else {
+    wxString mess =
+        wxString::Format(_("%s:%d File '%s' does not exist."), __FILE__,
+                         __LINE__, snp_file.GetFullPath());
+    DEBUG_MESSAGE(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+    if (be_quiet) {
+      cerr << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
+    return false;
+  }
+
   wxFileInputStream input_stream(snp_file.GetFullPath());
   if (!input_stream.IsOk()) {
-    wxLogError(_("%s:%d Cannot open file '%s'."), __FILE__, __LINE__, snp_file.GetFullPath());
+    wxString mess =
+        wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__, __LINE__,
+                         snp_file.GetFullPath());
+    DEBUG_MESSAGE(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+    if (be_quiet) {
+      cerr << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
     return false;
   }
   wxString N(snp_file.GetExt().Mid(1, 1));
@@ -106,7 +132,14 @@ bool SObject::readSFile(wxFileName& fileName) {
   } else
     numPorts = 0;
   if (numPorts < 1) {
-    wxLogError(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."), __FILE__, __LINE__, snp_file.GetFullPath());
+    wxString mess =
+        wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+                         __FILE__, __LINE__, snp_file.GetFullPath());
+    if (be_quiet) {
+      cerr << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
     return false;
   }
   wxTextInputStream text_input(input_stream);
@@ -197,7 +230,12 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
 
   ofstream output_stream(libName);
   if (!output_stream) {
-    wxLogError(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."), __FILE__, __LINE__ , libName);
+    wxString mess = wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."), __FILE__, __LINE__ , libName);
+    if (be_quiet) {
+      cerr << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
     return false;
   }
   output_stream << ".SUBCKT " << lib_file.GetName() << " ";
@@ -284,7 +322,11 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
   if (numPorts < 1) {
     wxString mess = wxString::Format(
         _("%s:%d No data. Please open SnP file and make LIB first."),__FILE__, __LINE__);
-    wxLogError(mess);
+    if (be_quiet) {
+      cerr << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
     return false;
   }
 
@@ -293,14 +335,24 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
   sym = Symbol(asyFile.GetName().ToStdString());
 
   if (sym.empty()) {
-    wxLogError(_("%s:%d Error creating symbol '%s'."), __FILE__, __LINE__, asyFile.GetName());
+    wxString mess = wxString::Format(_("%s:%d Error creating symbol '%s'."), __FILE__, __LINE__, asyFile.GetName());
+    if (be_quiet) {
+      cerr << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
     return false;
   }
 
   string symName(asyFile.GetFullPath().ToStdString());
   ofstream output_stream(symName);
   if (!output_stream) {
-    wxLogError(_("%s:%d Cannot create file '%s'."), __FILE__, __LINE__, symName);
+    wxString mess = wxString::Format(_("%s:%d Cannot create file '%s'."), __FILE__, __LINE__, symName);
+    if (be_quiet) {
+      cerr << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
     return false;
   }
   for (auto i = sym.begin(); i != sym.end(); i++) {
@@ -356,8 +408,13 @@ bool SObject::Convert2S() {
         }
       }
     } else {
-      wxLogError(wxString::Format("%s:%d Cannot read file '%s'."),__FILE__,__LINE__,
+      wxString mess = wxString::Format(wxString::Format("%s:%d Cannot read file '%s'."),__FILE__,__LINE__,
                  snp_file.GetFullPath());
+      if (be_quiet) {
+        cerr << mess << endl;
+      } else {
+        wxLogError(mess);
+      }
       return false;
     }
     if (numPorts == 2) {

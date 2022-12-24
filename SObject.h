@@ -38,6 +38,17 @@ using namespace std;
 
 #include "xqsmatrix.h"
 
+#if !defined(NDEBUG)
+#if !defined(DEBUG_MESSAGE)
+#define DEBUG_MESSAGE(MESS)                                             \
+  (wxMessageBox(wxString::Format(_("%s:%d ")+MESS, __FILE__, __LINE__), \
+                _("Debug s2spice"), wxOK | wxICON_INFORMATION));
+#endif
+#else
+#define DEBUG_MESSAGE(MESS) \
+  {}
+#endif
+
 class Sparam {
 public:
   Sparam() { Freq = 0.0; };
@@ -63,12 +74,19 @@ public:
   wxFileName getLIBfile() { return lib_file; }
   bool WriteASY(const wxFileName& file);
   bool WriteLIB(const wxFileName& file);
+  bool SetQuiet(bool flag) {
+    bool res = be_quiet;
+    be_quiet = flag;
+    return res;
+  };
+  bool GetQuiet() { return be_quiet; };
 
 private:
   vector<Sparam> SData;
   string data_strings;            // String array of data from SnP file
   wxArrayString comment_strings;  // String array of comments from SnP file
   bool data_saved;                // have we saved in imported S-parameter file
+  bool be_quiet;
   int numPorts;         // number of ports in this file (comes from file name)
   wxFileName snp_file;  // file that is currently loaded
   wxFileName asy_file;

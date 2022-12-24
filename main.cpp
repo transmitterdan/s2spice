@@ -29,6 +29,7 @@
 #ifndef WX_PRECOMP
 #include <wx/wx.h>
 #endif /* WX_PRECOMP */
+#include <wx/app.h>
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/filename.h>
@@ -51,8 +52,6 @@ using namespace std;
 
 #include "xqsmatrix.h"
 
-using namespace std;
-
 // This is the main class for the program
 class MyApp : public wxApp {
 public:
@@ -63,7 +62,7 @@ public:
   virtual int  OnRun();
 
 private:
-  bool silent_mode;
+  bool silent_mode = 0;
 };
 
 // This is the main event handler for the program
@@ -190,13 +189,14 @@ void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
 
 bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
   // any remaining params are probably file names
-  if (parser.GetParamCount() == 0) return true;
+  int pCount = parser.GetParamCount();
+  if (pCount == 0) return true;
 
   // If silent mode requested don't start the GUI
   // after handling all the comand line file names
   silent_mode = parser.Found(_("q"));
   SObject SData1;
-
+  SData1.SetQuiet(silent_mode);
   for (int i = 0; i < parser.GetParamCount(); i++) {
     wxString Param = parser.GetParam(i);
     bool isWild = wxIsWild(Param);
@@ -204,7 +204,11 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
       wxString mess = wxString::Format(
           _("%s:%d Wild card file names like '%s' are not handled (yet)."), __FILE__,
           __LINE__, Param.c_str());
-      wxLogError(mess);
+      if (silent_mode) {
+        cerr << mess << endl;
+      } else {
+        wxLogError(mess);
+      }
       return false;
     }
     wxFileName snp_file(Param);
@@ -217,7 +221,11 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         wxString mess = wxString::Format(
             _("%s:%d ASY file %s already exists.  Delete it first."), __FILE__,
             __LINE__, asyFile.GetFullPath().c_str());
-        wxLogError(mess);
+        if (silent_mode) {
+          cerr << mess << endl;
+        } else {
+          wxLogError(mess);
+        }
         return false;
       }
       if (!SData1.WriteASY(asyFile)) return false;
@@ -230,7 +238,11 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         wxString mess = wxString::Format(
             _("%s:%d LIB file %s already exists.  Delete it first."), __FILE__,
             __LINE__, libFile.GetFullPath().c_str());
-        wxLogError(mess);
+        if (silent_mode) {
+          cerr << mess << endl;
+        } else {
+          wxLogError(mess);
+        }
         return false;
       }
       if (!SData1.WriteLIB(libFile)) return false;
