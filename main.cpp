@@ -178,7 +178,7 @@ int MyApp::OnExit() {
 int MyApp::OnRun() {
   int exitcode = wxApp::OnRun();
   // wxTheClipboard->Flush();
-  if (exitcode != 0) return exitcode;
+  return exitcode;
 }
 
 void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
@@ -198,7 +198,7 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
   SObject SData1;
 
   for (int i = 0; i < parser.GetParamCount(); i++) {
-    string Param = parser.GetParam(i);
+    wxString Param = parser.GetParam(i);
     bool isWild = wxIsWild(Param);
     if (isWild) {
       wxString mess = wxString::Format(
