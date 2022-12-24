@@ -61,8 +61,7 @@ SObject::SObject() {
 }
 
 SObject::~SObject() {
-  SData.clear();
-  comment_strings.clear();
+  Clean();
 }
 
 bool SObject::openSFile(wxWindow* parent) {
@@ -92,7 +91,7 @@ bool SObject::openSFile(wxWindow* parent) {
 
 bool SObject::readSFile(wxFileName& fileName) {
 
-  SData.clear();
+  Clean();
   wxString cwd = wxGetCwd();
   
   snp_file.Assign(fileName);
@@ -372,7 +371,7 @@ bool SObject::Convert2S() {
   data_strings.clear();
   int nFreqs = tokens.size() / (numPorts * numPorts * 2 + 1);
   if (nFreqs * (numPorts * numPorts * 2 + 1) != tokens.size()) return false;
-  SData.clear();
+  Clean();
 
   auto i = tokens.begin();
   while (i != tokens.end()) {

@@ -119,41 +119,15 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
     {wxCMD_LINE_SWITCH, _("h"), _("help"),
      _("displays help on the command line parameters"), wxCMD_LINE_VAL_NONE,
      wxCMD_LINE_OPTION_HELP},
+    {wxCMD_LINE_SWITCH, _("f"), _("force"), _("overwrite any existing file"),
+     wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
     {wxCMD_LINE_SWITCH, _("l"), _("lib"), _("creates LIB library file"),
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
     {wxCMD_LINE_SWITCH, _("s"), _("symbol"), _("creates ASY symbol file"),
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_SWITCH, _("q"), _("quiet"), _("disables the GUI")},
+    {wxCMD_LINE_SWITCH, _("q"), _("quiet"), _("disables the GUI for command line usage")},
     {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
-     wxCMD_LINE_PARAM_OPTIONAL},
+     wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
 
     {wxCMD_LINE_NONE}};
 
@@ -188,7 +162,7 @@ void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
 }
 
 bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
-  // any remaining params are probably file names
+  // any remaining params should be the S-parameter file names
   int pCount = parser.GetParamCount();
   if (pCount == 0) return true;
 
@@ -197,27 +171,15 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
   silent_mode = parser.Found(_("q"));
   SObject SData1;
   SData1.SetQuiet(silent_mode);
-  for (int i = 0; i < parser.GetParamCount(); i++) {
-    wxString Param = parser.GetParam(i);
-    bool isWild = wxIsWild(Param);
-    if (isWild) {
-      wxString mess = wxString::Format(
-          _("%s:%d Wild card file names like '%s' are not handled (yet)."), __FILE__,
-          __LINE__, Param.c_str());
-      if (silent_mode) {
-        cerr << mess << endl;
-      } else {
-        wxLogError(mess);
-      }
-      return false;
-    }
-    wxFileName snp_file(Param);
+  for (int i = 0; i < pCount; i++) {
+    wxFileName snp_file(parser.GetParam(i));
     if (!SData1.readSFile(snp_file)) return false;
 
+    // Should we create the symbol file?
     if (parser.Found(_("s"))) {
       wxFileName asyFile = snp_file;
       asyFile.SetExt("asy");
-      if (asyFile.Exists()) {
+      if (asyFile.Exists() && !parser.Found(_("f"))) {
         wxString mess = wxString::Format(
             _("%s:%d ASY file %s already exists.  Delete it first."), __FILE__,
             __LINE__, asyFile.GetFullPath().c_str());
@@ -231,10 +193,11 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
       if (!SData1.WriteASY(asyFile)) return false;
     }
 
+    // Should we create the library file?
     if (parser.Found(_("l"))) {
       wxFileName libFile = snp_file;
       libFile.SetExt("lib");
-      if (libFile.Exists()) {
+      if (libFile.Exists() && !parser.Found(_("f"))) {
         wxString mess = wxString::Format(
             _("%s:%d LIB file %s already exists.  Delete it first."), __FILE__,
             __LINE__, libFile.GetFullPath().c_str());
@@ -320,8 +283,9 @@ void MyFrame::OnQuit(wxCommandEvent& event) {
 
 void MyFrame::OnClose(wxCloseEvent& event) {
   if (event.CanVeto() && !SData1.dataSaved()) {
-    if (wxMessageBox(_("The data has not been saved in library... continue closing?"),
-                     _("Please confirm"), wxICON_QUESTION | wxYES_NO) != wxYES) {
+    if (wxMessageBox(
+            _("The data has not been saved in library... continue closing?"),
+            _("Please confirm"), wxICON_QUESTION | wxYES_NO) != wxYES) {
       event.Veto();
       return;
     }
@@ -333,7 +297,8 @@ void MyFrame::OnClose(wxCloseEvent& event) {
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
   if (SData1.nPorts() < 1) {
-    wxString mess = wxString::Format(_("%s:%d No data. Please open SnP file first."), __FILE__, __LINE__);
+    wxString mess = wxString::Format(
+        _("%s:%d No data. Please open SnP file first."), __FILE__, __LINE__);
     wxLogError(mess);
     return;
   }

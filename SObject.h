@@ -80,6 +80,11 @@ public:
     return res;
   };
   bool GetQuiet() { return be_quiet; };
+  void Clean() {
+    SData.clear();
+    data_strings.clear();
+    comment_strings.clear();
+  };
 
 private:
   vector<Sparam> SData;
