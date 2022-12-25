@@ -89,8 +89,8 @@ bool SObject::openSFile(wxWindow* parent) {
   return readSFile(fileName);
 }
 
-bool SObject::readSFile(wxFileName& snp_file) {
-
+bool SObject::readSFile(wxFileName& SFile) {
+  snp_file = SFile;
   Clean();
 #if !defined(NDEBUG)
   wxString cwd = wxGetCwd();
