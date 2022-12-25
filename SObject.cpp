@@ -103,7 +103,7 @@ bool SObject::readSFile(wxFileName& SFile) {
     wxString mess =
         wxString::Format(_("[%s:%d]\nFile '%s' does not exist.\n"
                            "Current working directory: '%s'"),
-                         __FILE__, __LINE__, snp_file.GetFullPath(), cwd);
+                         __FILE__, __LINE__, snp_file.GetFullPath(), wxGetCwd());
     DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
     if (be_quiet) {
       cerr << mess << endl;

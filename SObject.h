@@ -30,6 +30,8 @@
 #pragma once
 #endif
 
+#include <wx/wx.h>
+
 using namespace std;
 
 // std libraries we use
