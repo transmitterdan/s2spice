@@ -225,7 +225,7 @@ bool SObject::writeLibFile(wxWindow* parent) {
 
 bool SObject::WriteLIB() {
   string libName(lib_file.GetFullPath().ToStdString());
-  int npMult = 10;
+  int npMult = 100;
   ofstream output_stream(libName);
   if (!output_stream) {
     wxString mess = wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."), __FILE__, __LINE__ , libName);
@@ -272,12 +272,12 @@ bool SObject::WriteLIB() {
       snprintf(out, charMAX, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
       output_stream << out;
       if (j + 1 == numPorts) {
-        snprintf(out, charMAX, "E%02d%02d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, i + 1, j + 1, numPorts + 1, npMult * (j + 1), numPorts + 1);
+        snprintf(out, charMAX, "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1,
+                 j + 1, npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1), numPorts + 1);
         output_stream << out;
       } else {
-        snprintf(out, charMAX, "E%02d%02d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, i + 1, j + 1, i + 1, j + 2, npMult * (j + 1), numPorts + 1);
+        snprintf(out, charMAX, "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1,
+                 j + 1, npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2, npMult * (j + 1), numPorts + 1);
         output_stream << out;
       }
       double offset = 0;
