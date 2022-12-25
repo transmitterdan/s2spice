@@ -38,10 +38,10 @@ Exit the program.
 
 ![LTspice schematic](Test/Screenshot%206.png)
 
-## Windows Usage Example 
+## Linux Usage Example 
 ```
-C:\>cd s2spice\Test & rem go to the test folder under s2spice
-C:\s2spice\Test>..\s2spice
+cd ~/myProjects/s2spice/Test ;go to the test folder under s2spice
+../build/s2spice
 ```
 When s2spice starts the window looks like this:
 ![Screenshot 1](Test/Screenshot%201.png)
@@ -64,13 +64,14 @@ cd ~/myProjects
 sudo apt update
 sudo apt install libwxbase3.0-dev  ; or whatever is latest version of wxWidgets
 git clone https://github.com/transmitterdan/s2spice
-git checkout main
 cd s2spice
+git checkout main
 mkdir build
 cd build
 cmake ..
 cmake --build . --config Release
-./s2spice
+cd ../Test
+../build/s2spice
 ```
 
 ### Building for Windows
