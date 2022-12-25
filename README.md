@@ -2,7 +2,7 @@
 
 Version 1, 2023-JAN-2
 
-S2spice is a utility program that reads S-Parameter files in Touchstone format. It can convert the data into a Spice .SUBCKT format and write it to a .LIB file. The .LIB file can be utilized by Spice simulators such as LTspice or PSpice to analyze the AC performance of the circuit described by the S-Parameters.  This is useful for analyzing systems with components that only have S-Parameter models.
+S2spice is a GUI utility program that reads S-Parameter files in Touchstone format. It can convert the data into a Spice .SUBCKT format and write it to a .LIB file. The .LIB file can be utilized by Spice simulators such as LTspice or PSpice to analyze the AC performance of the circuit described by the S-Parameters.  This is useful for analyzing systems with components that only have S-Parameter models.
 
 Another feature is the ability to create LTspice symbol (.ASY) files making it easier to add the new library file to a schematic.
 
@@ -18,7 +18,7 @@ A file open dialog will appear. Select from the dialog any S-Paramter file and p
 
 ## Make LIB
 
-Converts the file to Spice .SUBCKT format and writes a file with same name as the S-Parameter file but with extension .lib (or .LIB in Windows).
+Converts the S-parameter file to Spice .SUBCKT format and writes a file with same name as the S-Parameter file but with extension .lib (or .LIB in Windows).  The .SUBCKT name is the same as the S-paramter file name (without the extension).
 
 ## Make SYM
 
@@ -37,11 +37,6 @@ Exit the program.
 ![LTspice schematic](Test/Screenshot%205.png)
 
 ![LTspice schematic](Test/Screenshot%206.png)
-
-## Installation (Windows)
-Download the .zip file https://drive.google.com/file/d/1B4nMLFFSjssAPiJLtuuhsTYb2SGO_Ivc/view
-
-Unzip the file into a folder called s2spice.
 
 ## Windows Usage Example 
 ```
@@ -64,14 +59,16 @@ ___THE NEXT PART IS FOR EXPERIENCED DEVELOPERS ONLY___
 ### Building for Linux
 Release build on debian like (e.g. Ubuntu):
 ```
+mkdir ~/myProjects
+cd ~/myProjects
 sudo apt update
 sudo apt install libwxbase3.0-dev  ; or whatever is latest version of wxWidgets
-git clone https://github.com/transmitterdan/s2spice.git
+git clone https://github.com/transmitterdan/s2spice
 cd s2spice
 mkdir build
 cd build
 cmake ..
-cmake --build .
+cmake --build . --config=release
 ```
 
 ### Building for Windows
@@ -81,8 +78,9 @@ Install MS Visual Studio 2022 Community edition: https://visualstudio.microsoft.
 
 Open a "x86 Native Tools Command Prompt for VS 2022" window and create a folder where you want to build s2spice.  In this example, we assume you have created a folder called "C:\myProjects". Then issue these commands
 ```
-cd c:\myProjects
-git clone https://github.com/transmitterdan/s2spice.git
+c:
+cd \myProjects
+git clone https://github.com/transmitterdan/s2spice
 .\s2spice\setup_wxWidgets.bat
 ```
-If all goes well you should see the s2spice window open.  There are 2 executables created, one in the s2spice\build\Release folder, and the other in s2spice\build\Debug folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.
+If all goes well you should see the s2spice window open.  There are 2 executables created, one in the s2spice\build\Release folder, and the other in s2spice\build\Debug folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.  See setup_wxWidgets.bat for more details.
