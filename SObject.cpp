@@ -224,7 +224,7 @@ bool SObject::writeLibFile(wxWindow* parent) {
 bool SObject::WriteLIB(const wxFileName& libFile) {
   lib_file = libFile;
   string libName(lib_file.GetFullPath().ToStdString());
-
+  int npMult = 10;
   ofstream output_stream(libName);
   if (!output_stream) {
     wxString mess = wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."), __FILE__, __LINE__ , libName);
@@ -257,10 +257,10 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
 
   for (int i = 0; i < numPorts; i++) {
     output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
-                                       10 * (i + 1), -Z0)
+                                       npMult * (i + 1), -Z0)
                           .c_str());
-    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1, 10 * (i + 1),
-                                       10 * (i + 1) + 1, 2 * Z0));
+    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1, npMult * (i + 1),
+                                       npMult * (i + 1) + 1, 2 * Z0));
   }
 
   const int charMAX = 2048;
@@ -271,12 +271,12 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
       snprintf(out, charMAX, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
       output_stream << out;
       if (j + 1 == numPorts) {
-        snprintf(out, charMAX, "E%d%d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, i + 1, j + 1, numPorts + 1, 10 * (j + 1), numPorts + 1);
+        snprintf(out, charMAX, "E%02d%02d %d%d %d FREQ {V(%d,%d)}= DB\n", i + 1,
+                 j + 1, i + 1, j + 1, numPorts + 1, npMult * (j + 1), numPorts + 1);
         output_stream << out;
       } else {
-        snprintf(out, charMAX, "E%d%d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, i + 1, j + 1, i + 1, j + 2, 10 * (j + 1), numPorts + 1);
+        snprintf(out, charMAX, "E%02d%02d %d%d %d%d FREQ {V(%d,%d)}= DB\n", i + 1,
+                 j + 1, i + 1, j + 1, i + 1, j + 2, npMult * (j + 1), numPorts + 1);
         output_stream << out;
       }
       double offset = 0;
@@ -370,7 +370,6 @@ bool SObject::Convert2S() {
   data_strings.clear();
   int nFreqs = tokens.size() / (numPorts * numPorts * 2 + 1);
   if (nFreqs * (numPorts * numPorts * 2 + 1) != tokens.size()) return false;
-  Clean();
 
   auto i = tokens.begin();
   while (i != tokens.end()) {
