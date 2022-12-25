@@ -76,8 +76,8 @@ public:
   wxFileName getSNPfile() { return snp_file; }
   wxFileName getASYfile() { return asy_file; }
   wxFileName getLIBfile() { return lib_file; }
-  bool WriteASY(const wxFileName& file);
-  bool WriteLIB(const wxFileName& file);
+  bool WriteASY();
+  bool WriteLIB();
   bool SetQuiet(bool flag) {
     bool res = be_quiet;
     be_quiet = flag;

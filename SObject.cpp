@@ -90,8 +90,12 @@ bool SObject::openSFile(wxWindow* parent) {
 }
 
 bool SObject::readSFile(wxFileName& SFile) {
-  snp_file = SFile;
   Clean();
+  snp_file = SFile;
+  lib_file = SFile;
+  asy_file = SFile;
+  lib_file.SetExt("lib");
+  asy_file.SetExt("asy");
 #if !defined(NDEBUG)
   wxString cwd = wxGetCwd();
 #endif
@@ -209,20 +213,17 @@ bool SObject::readSFile(wxFileName& SFile) {
 }
 
 bool SObject::writeLibFile(wxWindow* parent) {
-  wxFileName libFile = snp_file;
-  libFile.SetExt("lib");
-  if (libFile.FileExists()) {
+  if (lib_file.FileExists()) {
     wxString mess = wxString::Format(_("Library file '%s' exists. Overwrite?"),
-                                     libFile.GetFullPath());
+                                     lib_file.GetFullPath());
     if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
                      parent) == wxNO)
       return false;
   }
-  return WriteLIB(libFile);
+  return WriteLIB();
 }
 
-bool SObject::WriteLIB(const wxFileName& libFile) {
-  lib_file = libFile;
+bool SObject::WriteLIB() {
   string libName(lib_file.GetFullPath().ToStdString());
   int npMult = 10;
   ofstream output_stream(libName);
@@ -303,20 +304,17 @@ bool SObject::WriteLIB(const wxFileName& libFile) {
 }
 
 bool SObject::writeSymFile(wxWindow* parent) {
-  wxFileName asyFile = snp_file;
-  asyFile.SetExt("asy");
-  if (asyFile.FileExists()) {
+  if (asy_file.FileExists()) {
     wxString mess = wxString::Format(_("Symbol file '%s' exists. Overwrite?"),
-                                     asyFile.GetFullPath());
+                                     asy_file.GetFullPath());
     if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
                      parent) == wxNO)
       return false;
   }
-  return WriteASY(asyFile);
+  return WriteASY();
 }
 
-bool SObject::WriteASY(const wxFileName& asyFile) {
-  asy_file = asyFile;
+bool SObject::WriteASY() {
   if (numPorts < 1) {
     wxString mess = wxString::Format(
         _("%s:%d No data. Please open SnP file and make LIB first."),__FILE__, __LINE__);
@@ -330,10 +328,10 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
 
   vector<string> sym;
 
-  sym = Symbol(asyFile.GetName().ToStdString());
+  sym = Symbol(asy_file.GetName().ToStdString());
 
   if (sym.empty()) {
-    wxString mess = wxString::Format(_("%s:%d Error creating symbol '%s'."), __FILE__, __LINE__, asyFile.GetName());
+    wxString mess = wxString::Format(_("%s:%d Error creating symbol '%s'."), __FILE__, __LINE__, asy_file.GetName());
     if (be_quiet) {
       cerr << mess << endl;
     } else {
@@ -342,7 +340,7 @@ bool SObject::WriteASY(const wxFileName& asyFile) {
     return false;
   }
 
-  string symName(asyFile.GetFullPath().ToStdString());
+  string symName(asy_file.GetFullPath().ToStdString());
   ofstream output_stream(symName);
   if (!output_stream) {
     wxString mess = wxString::Format(_("%s:%d Cannot create file '%s'."), __FILE__, __LINE__, symName);

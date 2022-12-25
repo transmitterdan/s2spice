@@ -156,17 +156,15 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
   SObject SData1;
   SData1.SetQuiet(silent_mode);
   for (int i = 0; i < pCount; i++) {
-    wxFileName snp_file(parser.GetParam(i));
-    if (!SData1.readSFile(snp_file)) return false;
+    wxFileName SFile(parser.GetParam(i));
+    if (!SData1.readSFile(SFile)) return false;
 
     // Should we create the symbol file?
     if (parser.Found(_("s"))) {
-      wxFileName asyFile = snp_file;
-      asyFile.SetExt("asy");
-      if (asyFile.Exists() && !parser.Found(_("f"))) {
+      if (SData1.getASYfile().Exists() && !parser.Found(_("f"))) {
         wxString mess = wxString::Format(
             _("%s:%d ASY file %s already exists.  Delete it first."), __FILE__,
-            __LINE__, asyFile.GetFullPath().c_str());
+            __LINE__, SData1.getASYfile().GetFullPath().c_str());
         if (silent_mode) {
           cerr << mess << endl;
         } else {
@@ -174,17 +172,15 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         }
         return false;
       }
-      if (!SData1.WriteASY(asyFile)) return false;
+      if (!SData1.WriteASY()) return false;
     }
 
     // Should we create the library file?
     if (parser.Found(_("l"))) {
-      wxFileName libFile = snp_file;
-      libFile.SetExt("lib");
-      if (libFile.Exists() && !parser.Found(_("f"))) {
+      if (SData1.getLIBfile().Exists() && !parser.Found(_("f"))) {
         wxString mess = wxString::Format(
             _("%s:%d LIB file %s already exists.  Delete it first."), __FILE__,
-            __LINE__, libFile.GetFullPath().c_str());
+            __LINE__, SData1.getLIBfile().GetFullPath().c_str());
         if (silent_mode) {
           cerr << mess << endl;
         } else {
@@ -192,7 +188,7 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         }
         return false;
       }
-      if (!SData1.WriteLIB(libFile)) return false;
+      if (!SData1.WriteLIB()) return false;
     }
   }
   return !silent_mode;
