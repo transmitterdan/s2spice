@@ -304,8 +304,8 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   bool res = SData1.writeLibFile(this);
   if (res)
     SetStatusText(
-        wxString::Format(_("S2spice: Library object %s successfully created."),
-                         SData1.getSNPfile().GetName()));
+        wxString::Format(_("S2spice: Library file %s successfully created."),
+                         SData1.getSNPfile().GetFullPath()));
 }
 
 void MyFrame::OnMkASY(wxCommandEvent& event) {
@@ -315,8 +315,8 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
   bool res = SData1.writeSymFile(this);
   if (res)
     SetStatusText(
-        wxString::Format(_("S2spice: Symbol object %s successfully created."),
-                         SData1.getASYfile().GetName()));
+        wxString::Format(_("S2spice: Symbol file %s successfully created."),
+                         SData1.getASYfile().GetFullPath()));
 }
 
 void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
