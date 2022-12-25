@@ -69,7 +69,8 @@ cd s2spice
 mkdir build
 cd build
 cmake ..
-cmake --build . --config=release
+cmake --build . --config Release
+./s2spice
 ```
 
 ### Building for Windows
