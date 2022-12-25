@@ -86,11 +86,7 @@ public:
     return res;
   };
   bool GetQuiet() { return be_quiet; };
-  void Clean() {
-    SData.clear();
-    data_strings.clear();
-    comment_strings.clear();
-  };
+  void Clean();
 
 private:
   vector<Sparam> SData;
@@ -107,7 +103,6 @@ private:
   wxString format;         // data format (DB, MA or RI)
   wxString parameter;      // type of parameter (S is the only allowed type)
   wxString option_string;  // meta data strings
-
   // This function reads the contents of the file into a vector of points
   vector<pair<double, double>> ReadFile(const string& fileName);
 
@@ -118,9 +113,14 @@ private:
 
   // Read in .snp file
   bool ReadSNP(const wxFileName& file);
-
   // Convert text to S-parameters
   bool Convert2S();
 };
+
+inline void SObject::Clean() {
+  SData.clear();
+  data_strings.clear();
+  comment_strings.clear();
+}
 
 #endif
