@@ -126,12 +126,13 @@ bool SObject::readSFile(wxFileName& SFile) {
     }
     return false;
   }
-  wxString N(snp_file.GetExt().Mid(1, 1));
-  if (N.IsNumber()) {
-    numPorts = atoi(N.ToAscii());
-    if (numPorts < 0) numPorts = 0;
-  } else
-    numPorts = 0;
+  // the numbers in the extension tell us the number of ports
+  string ext(snp_file.GetExt().c_str());
+  string strPorts;
+  for (auto i : ext) {
+    if (isdigit(i)) strPorts += i;
+  }
+  numPorts = (strPorts.length() == 0) ? 0 : atoi(strPorts.c_str());
   if (numPorts < 1) {
     wxString mess =
         wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
