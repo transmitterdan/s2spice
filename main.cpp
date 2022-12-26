@@ -222,7 +222,9 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
   debugFlag = true;
   debug_redirector = NULL;
+#if defined(__WXMSW__)
   SetIcon(wxICON(IDI_ICON1));
+#endif
   auto menuFile = new wxMenu();
   menuFile->Append(ID_OPEN, _("&Open...\tCtrl-O"), _("Open SnP file"));
   menuFile->AppendSeparator();
