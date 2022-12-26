@@ -51,6 +51,7 @@ using namespace std;
 #include <fstream>
 #include <string>
 #include <utility>
+#include <assert.h>
 
 #include "xqsmatrix.h"
 
@@ -74,7 +75,8 @@ public:
 
 private:
   SObject SData;
-
+  bool debugFlag;
+  wxStreamToTextRedirector* debug_redirector;
   // This function is called when the "Open" button is clicked
   void OnOpen(wxCommandEvent& event);
 
@@ -106,7 +108,8 @@ private:
 
   };
 };
-// This is the event table for the program
+
+// This is the event table for the GUI
 wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_BUTTON(ID_OPEN,  MyFrame::OnOpen)
   EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
@@ -217,6 +220,8 @@ int MyApp::OnExit() {
 // used
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
+  debugFlag = true;
+  debug_redirector = NULL;
   SetIcon(wxICON(IDI_ICON1));
   auto menuFile = new wxMenu();
   menuFile->Append(ID_OPEN, _("&Open...\tCtrl-O"), _("Open SnP file"));
@@ -254,32 +259,44 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
       event.Skip();
   });
 
-  wxSizer* mainPnlSizer = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer* frameSizer = new wxBoxSizer(wxVERTICAL);
+  wxPanel* mainPanel = new wxPanel(this);
+  this->Show();
   wxSizer* buttonRowSizer = new wxBoxSizer(wxHORIZONTAL);
-
+  
   // Create the buttons
-  wxButton* openButton = new wxButton(this, wxID_ANY, _("Open"));
+  wxButton* openButton = new wxButton(mainPanel, wxID_ANY, _("Open"));
   openButton->Bind(wxEVT_BUTTON, &MyFrame::OnOpen, this);
   buttonRowSizer->Add(openButton, wxLEFT);
-  wxButton* libButton = new wxButton(this, wxID_ANY, _("Save LIB"));
+  wxButton* libButton = new wxButton(mainPanel, wxID_ANY, _("Save LIB"));
   libButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkLIB, this);
   buttonRowSizer->Add(libButton, wxLEFT);
-  wxButton* symButton = new wxButton(this, wxID_ANY, _("Save SYM"));
+  wxButton* symButton = new wxButton(mainPanel, wxID_ANY, _("Save SYM"));
   symButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkASY, this);
   buttonRowSizer->Add(symButton, wxLEFT);
-  // wxButton* quitButton = new wxButton(this, wxID_ANY, _("Quit"));
-  // quitButton->Bind(wxEVT_BUTTON, &MyFrame::OnClose, this);
-  // mainPnlSizer->Add(quitButton, wxLEFT);
-  wxButton* aboutButton = new wxButton(this, wxID_ABOUT, _("About..."));
+  wxButton* aboutButton = new wxButton(mainPanel, wxID_ABOUT, _("About..."));
   aboutButton->Bind(wxEVT_BUTTON, &MyFrame::OnAbout, this);
   buttonRowSizer->Add(aboutButton, wxLeft);
-  mainPnlSizer->Add(buttonRowSizer, wxALIGN_CENTRE_VERTICAL);
-  SetSizer(mainPnlSizer);
+  frameSizer->Add(buttonRowSizer);
+#if defined(__WXMSW__)
+  wxSizer* debugPanelSizer = new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Debug Messages");
+  // wxPanel* txtPanel = new wxPanel(this, -1);
+  wxTextCtrl* debugWindow =
+      new wxTextCtrl(mainPanel, wxID_ANY, _("Debug messages appear here\n"), wxDefaultPosition,
+      wxDefaultSize, wxTE_MULTILINE);
+  debug_redirector = new wxStreamToTextRedirector(debugWindow);
+  debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
+  frameSizer->Add(debugPanelSizer, 1, wxEXPAND);
+  debugPanelSizer->SetSizeHints(this);
+#endif
+  mainPanel->SetSizer(frameSizer);
+  frameSizer->SetSizeHints(this);
 }
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
   // shut down the main frame
   Close(false);
+  assert(!debugFlag);
 }
 
 void MyFrame::OnClose(wxCloseEvent& event) {
@@ -291,6 +308,9 @@ void MyFrame::OnClose(wxCloseEvent& event) {
       return;
     }
   }
+  if (debug_redirector != NULL) delete debug_redirector;
+  debug_redirector = NULL;
+  debugFlag = false;
   event.Skip();
 }
 
@@ -305,10 +325,13 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
 
   wxBusyCursor wait;
   bool res = SData.writeLibFile(this);
-  if (res)
-    SetStatusText(
+  if (res) {
+    wxString mess =
         wxString::Format(_("S2spice: Library file %s successfully created."),
-                         SData.getSNPfile().GetFullPath()));
+                         SData.getSNPfile().GetFullPath());
+    SetStatusText(mess);
+    cout << mess << "\n";
+  }
 }
 
 void MyFrame::OnMkASY(wxCommandEvent& event) {
