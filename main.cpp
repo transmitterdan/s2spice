@@ -88,6 +88,11 @@ private:
   // This function is called when the "Quit" button is clicked
   void OnQuit(wxCommandEvent& event);
 
+#if defined(__WXMSW__)
+  wxTextCtrl* logWindow;
+  wxStreamToTextRedirector* logWindowRedirector;
+#endif
+
   wxDECLARE_EVENT_TABLE();
   enum wxFrameID {
     // The ID of the "Open" button
@@ -166,7 +171,7 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
             _("%s:%d ASY file %s already exists.  Delete it first."), __FILE__,
             __LINE__, SData1.getASYfile().GetFullPath().c_str());
         if (silent_mode) {
-          cerr << mess << endl;
+          cout << mess << endl;
         } else {
           wxLogError(mess);
         }
@@ -182,7 +187,7 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
             _("%s:%d LIB file %s already exists.  Delete it first."), __FILE__,
             __LINE__, SData1.getLIBfile().GetFullPath().c_str());
         if (silent_mode) {
-          cerr << mess << endl;
+          cout << mess << endl;
         } else {
           wxLogError(mess);
         }
@@ -271,6 +276,15 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   // Create the "Quit" button
   wxButton* quitButton =
       new wxButton(this, ID_QUIT, _("Quit"), wxPoint(280, 10), wxSize(80, 30));
+
+#if defined(__WXMSW__)
+  int xSize, ySize;
+  GetClientSize(&xSize, &ySize);
+  ySize = ySize - 40;
+  logWindow =
+      new wxTextCtrl(this, -1, wxEmptyString, wxPoint(0, 40), wxSize(xSize, ySize));
+  logWindowRedirector = new wxStreamToTextRedirector(logWindow);
+#endif
 }
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
@@ -287,7 +301,11 @@ void MyFrame::OnClose(wxCloseEvent& event) {
       return;
     }
   }
-
+#if defined(__WXMSW__)
+  delete logWindowRedirector;
+  logWindow->Close();
+  delete logWindow;
+#endif
   event.Skip();
 }
 

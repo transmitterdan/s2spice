@@ -106,7 +106,7 @@ bool SObject::readSFile(wxFileName& SFile) {
                          __FILE__, __LINE__, snp_file.GetFullPath(), wxGetCwd());
     // DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
     if (be_quiet) {
-      cerr << mess << endl;
+      cout << mess << endl;
     } else {
       wxLogError(mess);
     }
@@ -120,7 +120,7 @@ bool SObject::readSFile(wxFileName& SFile) {
                          snp_file.GetFullPath());
     // DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
     if (be_quiet) {
-      cerr << mess << endl;
+      cout << mess << endl;
     } else {
       wxLogError(mess);
     }
@@ -138,7 +138,7 @@ bool SObject::readSFile(wxFileName& SFile) {
         wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
                          __FILE__, __LINE__, snp_file.GetFullPath());
     if (be_quiet) {
-      cerr << mess << endl;
+      cout << mess << endl;
     } else {
       wxLogError(mess);
     }
@@ -231,7 +231,7 @@ bool SObject::WriteLIB() {
   if (!output_stream) {
     wxString mess = wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."), __FILE__, __LINE__ , libName);
     if (be_quiet) {
-      cerr << mess << endl;
+      cout << mess << endl;
     } else {
       wxLogError(mess);
     }
@@ -320,7 +320,7 @@ bool SObject::WriteASY() {
     wxString mess = wxString::Format(
         _("%s:%d No data. Please open SnP file and make LIB first."),__FILE__, __LINE__);
     if (be_quiet) {
-      cerr << mess << endl;
+      cout << mess << endl;
     } else {
       wxLogError(mess);
     }
@@ -334,7 +334,7 @@ bool SObject::WriteASY() {
   if (sym.empty()) {
     wxString mess = wxString::Format(_("%s:%d Error creating symbol '%s'."), __FILE__, __LINE__, asy_file.GetName());
     if (be_quiet) {
-      cerr << mess << endl;
+      cout << mess << endl;
     } else {
       wxLogError(mess);
     }
@@ -346,7 +346,7 @@ bool SObject::WriteASY() {
   if (!output_stream) {
     wxString mess = wxString::Format(_("%s:%d Cannot create file '%s'."), __FILE__, __LINE__, symName);
     if (be_quiet) {
-      cerr << mess << endl;
+      cout << mess << endl;
     } else {
       wxLogError(mess);
     }
@@ -407,7 +407,7 @@ bool SObject::Convert2S() {
       wxString mess = wxString::Format(wxString::Format("%s:%d Cannot read file '%s'."),__FILE__,__LINE__,
                  snp_file.GetFullPath());
       if (be_quiet) {
-        cerr << mess << endl;
+        cout << mess << endl;
       } else {
         wxLogError(mess);
       }
