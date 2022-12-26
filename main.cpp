@@ -359,6 +359,7 @@ void MyFrame::OnOpen(wxCommandEvent& event) {
 }
 
 void MyFrame::OnAbout(wxCommandEvent& event) {
+  wxVersionInfo info;
   wxMessageBox(
       wxString::Format(
           _("s2spice  Copyright (C) <2023>  Dan Dickey\n"
@@ -368,7 +369,8 @@ void MyFrame::OnAbout(wxCommandEvent& event) {
             "Use to convert Touchstone (aka SnP) file into LTspice\n"
             "subcircuit file. Open .SnP file, then use buttons to create\n"
             "and save library (LIB) and symbol (ASY) files.\n"
+            "wxWidgets version: %s\n"
             "Running on: %s\n"),
-          wxGetOsDescription()),
+          info.ToString(), wxGetOsDescription()),
       _("About S2spice"), wxOK | wxICON_INFORMATION, this);
 }
