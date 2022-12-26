@@ -35,6 +35,8 @@
 #include <wx/filename.h>
 #include <wx/tokenzr.h>
 #include <wx/cmdline.h>
+#include <wx/sizer.h>
+#include <wx/event.h>
 
 #include "SObject.h"
 
@@ -71,7 +73,7 @@ public:
   MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
 
 private:
-  SObject SData1;
+  SObject SData;
 
   // This function is called when the "Open" button is clicked
   void OnOpen(wxCommandEvent& event);
@@ -88,15 +90,13 @@ private:
   // This function is called when the "Quit" button is clicked
   void OnQuit(wxCommandEvent& event);
 
-#if defined(__WXMSW__)
-  wxTextCtrl* logWindow;
-  wxStreamToTextRedirector* logWindowRedirector;
-#endif
+  void OnAbout(wxCommandEvent& event);
 
   wxDECLARE_EVENT_TABLE();
-  enum wxFrameID {
+  enum wxMyFrameID {
     // The ID of the "Open" button
     ID_OPEN = 1,
+    ID_CLOSE,
 
     // The ID of the "LIB" button
     ID_MKLIB,
@@ -104,8 +104,6 @@ private:
     // The ID of the "SYM" button
     ID_MKSYM,
 
-    // The ID of the "Quit" button
-    ID_QUIT
   };
 };
 // This is the event table for the program
@@ -113,7 +111,7 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_BUTTON(ID_OPEN,  MyFrame::OnOpen)
   EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
   EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
-  EVT_BUTTON(ID_QUIT,  MyFrame::OnQuit)
+  EVT_BUTTON(ID_CLOSE,  MyFrame::OnQuit)
   EVT_CLOSE(MyFrame::OnClose)
 wxEND_EVENT_TABLE()
 
@@ -121,9 +119,8 @@ wxEND_EVENT_TABLE()
 wxIMPLEMENT_APP(MyApp);
 
 static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
-    {wxCMD_LINE_SWITCH, _("h"), _("help"),
-     _("displays command line options"), wxCMD_LINE_VAL_NONE,
-     wxCMD_LINE_OPTION_HELP},
+    {wxCMD_LINE_SWITCH, _("h"), _("help"), _("displays command line options"),
+     wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP},
     {wxCMD_LINE_SWITCH, _("f"), _("force"), _("overwrite any existing file"),
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
     {wxCMD_LINE_SWITCH, _("l"), _("lib"), _("creates LIB library file"),
@@ -216,8 +213,11 @@ int MyApp::OnExit() {
 }
 
 // This is the implementation of the GUI
+// If user selects -q at the command line the GUI is not shown unless -h is also
+// used
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
+  SetIcon(wxICON(IDI_ICON1));
   auto menuFile = new wxMenu();
   menuFile->Append(ID_OPEN, _("&Open...\tCtrl-O"), _("Open SnP file"));
   menuFile->AppendSeparator();
@@ -247,45 +247,34 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     else if (event.GetId() == ID_MKLIB)
       OnMkLIB(event);
     else if (event.GetId() == wxID_ABOUT)
-      wxMessageBox(
-          _("s2spice  Copyright (C) <2023>  Dan Dickey\n"
-            "This program comes with ABSOLUTELY NO WARRANTY.\n"
-            "This is free software, and you are welcome to redistribute it\n"
-            "under certain conditions.\n\n"
-            "Use to convert Touchstone (aka SnP) file into LTspice\n"
-            "subcircuit file. Open .SnP file, then use buttons to create\n"
-            "and save library (LIB) and symbol (ASY) files."),
-          _("About S2spice"), wxOK | wxICON_INFORMATION, this);
+      OnAbout(event);
     else if (event.GetId() == wxID_EXIT)
       OnQuit(event);
     else
       event.Skip();
   });
-  // Create the "Open" button
-  wxButton* openButton =
-      new wxButton(this, ID_OPEN, _("Open"), wxPoint(10, 10), wxSize(80, 30));
 
-  // Create the "Read" button
-  wxButton* libButton = new wxButton(this, ID_MKLIB, _("Save LIB"),
-                                     wxPoint(100, 10), wxSize(80, 30));
+  wxSizer* mainPnlSizer = new wxBoxSizer(wxVERTICAL);
+  wxSizer* buttonRowSizer = new wxBoxSizer(wxHORIZONTAL);
 
-  // Create the "Symbol" button
-  wxButton* symButton = new wxButton(this, ID_MKSYM, _("Save SYM"),
-                                     wxPoint(190, 10), wxSize(80, 30));
-
-  // Create the "Quit" button
-  wxButton* quitButton =
-      new wxButton(this, ID_QUIT, _("Quit"), wxPoint(280, 10), wxSize(80, 30));
-
-#if defined(__WXMSW__)
-  SetIcon(wxICON(IDI_ICON1));
-  int xSize, ySize;
-  GetClientSize(&xSize, &ySize);
-  ySize = ySize - 40;
-  logWindow =
-      new wxTextCtrl(this, -1, wxEmptyString, wxPoint(0, 40), wxSize(xSize, ySize));
-  logWindowRedirector = new wxStreamToTextRedirector(logWindow);
-#endif
+  // Create the buttons
+  wxButton* openButton = new wxButton(this, wxID_ANY, _("Open"));
+  openButton->Bind(wxEVT_BUTTON, &MyFrame::OnOpen, this);
+  buttonRowSizer->Add(openButton, wxLEFT);
+  wxButton* libButton = new wxButton(this, wxID_ANY, _("Save LIB"));
+  libButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkLIB, this);
+  buttonRowSizer->Add(libButton, wxLEFT);
+  wxButton* symButton = new wxButton(this, wxID_ANY, _("Save SYM"));
+  symButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkASY, this);
+  buttonRowSizer->Add(symButton, wxLEFT);
+  // wxButton* quitButton = new wxButton(this, wxID_ANY, _("Quit"));
+  // quitButton->Bind(wxEVT_BUTTON, &MyFrame::OnClose, this);
+  // mainPnlSizer->Add(quitButton, wxLEFT);
+  wxButton* aboutButton = new wxButton(this, wxID_ABOUT, _("About..."));
+  aboutButton->Bind(wxEVT_BUTTON, &MyFrame::OnAbout, this);
+  buttonRowSizer->Add(aboutButton, wxLeft);
+  mainPnlSizer->Add(buttonRowSizer, wxALIGN_CENTRE_VERTICAL);
+  SetSizer(mainPnlSizer);
 }
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
@@ -294,7 +283,7 @@ void MyFrame::OnQuit(wxCommandEvent& event) {
 }
 
 void MyFrame::OnClose(wxCloseEvent& event) {
-  if (event.CanVeto() && !SData1.dataSaved()) {
+  if (event.CanVeto() && !SData.dataSaved()) {
     if (wxMessageBox(
             _("The data has not been saved in library... continue closing?"),
             _("Please confirm"), wxICON_QUESTION | wxYES_NO) != wxYES) {
@@ -302,17 +291,12 @@ void MyFrame::OnClose(wxCloseEvent& event) {
       return;
     }
   }
-#if defined(__WXMSW__)
-  delete logWindowRedirector;
-  logWindow->Close();
-  delete logWindow;
-#endif
   event.Skip();
 }
 
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
-  if (SData1.nPorts() < 1) {
+  if (SData.nPorts() < 1) {
     wxString mess = wxString::Format(
         _("%s:%d No data. Please open SnP file first."), __FILE__, __LINE__);
     wxLogError(mess);
@@ -320,30 +304,45 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   }
 
   wxBusyCursor wait;
-  bool res = SData1.writeLibFile(this);
+  bool res = SData.writeLibFile(this);
   if (res)
     SetStatusText(
         wxString::Format(_("S2spice: Library file %s successfully created."),
-                         SData1.getSNPfile().GetFullPath()));
+                         SData.getSNPfile().GetFullPath()));
 }
 
 void MyFrame::OnMkASY(wxCommandEvent& event) {
   //  wxMessageBox("Symbol button pressed.");
 
   wxBusyCursor wait;
-  bool res = SData1.writeSymFile(this);
+  bool res = SData.writeSymFile(this);
   if (res)
     SetStatusText(
         wxString::Format(_("S2spice: Symbol file %s successfully created."),
-                         SData1.getASYfile().GetFullPath()));
+                         SData.getASYfile().GetFullPath()));
 }
 
-void MyFrame::OnOpen(wxCommandEvent& WXUNUSED(event)) {
-  if (SData1.openSFile(this))
+void MyFrame::OnOpen(wxCommandEvent& event) {
+  if (SData.openSFile(this))
     SetStatusText(
         wxString::Format(_("S2spice: Data successfully imported from %s."),
-                         SData1.getSNPfile().GetFullPath()));
+                         SData.getSNPfile().GetFullPath()));
   else
     SetStatusText(wxString::Format(_("S2spice: Data import failed from %s!"),
-                                   SData1.getSNPfile().GetFullPath()));
+                                   SData.getSNPfile().GetFullPath()));
+}
+
+void MyFrame::OnAbout(wxCommandEvent& event) {
+  wxMessageBox(
+      wxString::Format(
+          _("s2spice  Copyright (C) <2023>  Dan Dickey\n"
+            "This program comes with ABSOLUTELY NO WARRANTY.\n"
+            "This is free software, and you are welcome to redistribute it\n"
+            "under certain conditions.\n\n"
+            "Use to convert Touchstone (aka SnP) file into LTspice\n"
+            "subcircuit file. Open .SnP file, then use buttons to create\n"
+            "and save library (LIB) and symbol (ASY) files.\n"
+            "Running on: %s\n"),
+          wxGetOsDescription()),
+      _("About S2spice"), wxOK | wxICON_INFORMATION, this);
 }
