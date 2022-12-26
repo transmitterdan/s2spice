@@ -265,7 +265,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   wxPanel* mainPanel = new wxPanel(this);
   this->Show();
   wxSizer* buttonRowSizer = new wxBoxSizer(wxHORIZONTAL);
-  
+
   // Create the buttons
   wxButton* openButton = new wxButton(mainPanel, wxID_ANY, _("Open"));
   openButton->Bind(wxEVT_BUTTON, &MyFrame::OnOpen, this);
@@ -281,11 +281,12 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   buttonRowSizer->Add(aboutButton, wxLeft);
   frameSizer->Add(buttonRowSizer);
 #if defined(__WXMSW__)
-  wxSizer* debugPanelSizer = new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Debug Messages");
+  wxSizer* debugPanelSizer =
+      new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Debug Messages");
   // wxPanel* txtPanel = new wxPanel(this, -1);
   wxTextCtrl* debugWindow =
-      new wxTextCtrl(mainPanel, wxID_ANY, _("Debug messages appear here\n"), wxDefaultPosition,
-      wxDefaultSize, wxTE_MULTILINE);
+      new wxTextCtrl(mainPanel, wxID_ANY, _("Debug messages appear here\n"),
+                     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
   debug_redirector = new wxStreamToTextRedirector(debugWindow);
   debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
   frameSizer->Add(debugPanelSizer, 1, wxEXPAND);
