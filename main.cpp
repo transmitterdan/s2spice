@@ -122,7 +122,7 @@ wxIMPLEMENT_APP(MyApp);
 
 static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
     {wxCMD_LINE_SWITCH, _("h"), _("help"),
-     _("displays help on the command line parameters"), wxCMD_LINE_VAL_NONE,
+     _("displays command line options"), wxCMD_LINE_VAL_NONE,
      wxCMD_LINE_OPTION_HELP},
     {wxCMD_LINE_SWITCH, _("f"), _("force"), _("overwrite any existing file"),
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
@@ -131,7 +131,7 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
     {wxCMD_LINE_SWITCH, _("s"), _("symbol"), _("creates ASY symbol file"),
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
     {wxCMD_LINE_SWITCH, _("q"), _("quiet"),
-     _("disables the GUI for command line usage")},
+     _("disables the GUI (for command line only usage)")},
     {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
      wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
 
@@ -219,18 +219,18 @@ int MyApp::OnExit() {
 MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
   auto menuFile = new wxMenu();
-  menuFile->Append(ID_OPEN, "&Open...\tCtrl-O", "Open SnP file");
+  menuFile->Append(ID_OPEN, _("&Open...\tCtrl-O"), _("Open SnP file"));
   menuFile->AppendSeparator();
-  menuFile->Append(ID_MKLIB, "&Save LIB...\tCtrl-L", "Save Library file");
-  menuFile->Append(ID_MKSYM, "&Save ASY...\tCtrl-L", "Save Symbol file");
+  menuFile->Append(ID_MKLIB, _("&Save LIB...\tCtrl-L"), _("Save Library file"));
+  menuFile->Append(ID_MKSYM, _("&Save ASY...\tCtrl-L"), _("Save Symbol file"));
   menuFile->Append(wxID_EXIT);
 
   auto menuHelp = new wxMenu();
   menuHelp->Append(wxID_ABOUT);
   auto menuBar = new wxMenuBar();
 
-  menuBar->Append(menuFile, "&File");
-  menuBar->Append(menuHelp, "&Help");
+  menuBar->Append(menuFile, _("&File"));
+  menuBar->Append(menuHelp, _("&Help"));
   SetMenuBar(menuBar);
 
   CreateStatusBar();
@@ -278,6 +278,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
       new wxButton(this, ID_QUIT, _("Quit"), wxPoint(280, 10), wxSize(80, 30));
 
 #if defined(__WXMSW__)
+  SetIcon(wxICON(IDI_ICON1));
   int xSize, ySize;
   GetClientSize(&xSize, &ySize);
   ySize = ySize - 40;
