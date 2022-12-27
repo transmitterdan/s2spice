@@ -281,18 +281,18 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   aboutButton->Bind(wxEVT_BUTTON, &MyFrame::OnAbout, this);
   buttonRowSizer->Add(aboutButton, wxLeft);
   frameSizer->Add(buttonRowSizer);
-#if defined(__WXMSW__)
+
   wxSizer* debugPanelSizer =
       new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Debug Messages");
   // wxPanel* txtPanel = new wxPanel(this, -1);
   wxTextCtrl* debugWindow =
-      new wxTextCtrl(mainPanel, wxID_ANY, _("Debug messages appear here\n"), wxDefaultPosition,
+      new wxTextCtrl(mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
       wxDefaultSize, wxTE_READONLY | wxTE_MULTILINE);
   debug_redirector = new wxStreamToTextRedirector(debugWindow);
   debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
   frameSizer->Add(debugPanelSizer, 1, wxEXPAND);
   debugPanelSizer->SetSizeHints(this);
-#endif
+
   mainPanel->SetSizer(frameSizer);
   frameSizer->SetSizeHints(this);
 }
