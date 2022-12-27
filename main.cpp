@@ -43,6 +43,7 @@
 using namespace std;
 
 // std libraries we use
+#include <stdio.h>
 #include <vector>
 #include <sstream>
 #include <complex>
@@ -285,8 +286,8 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
       new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Debug Messages");
   // wxPanel* txtPanel = new wxPanel(this, -1);
   wxTextCtrl* debugWindow =
-      new wxTextCtrl(mainPanel, wxID_ANY, _("Debug messages appear here\n"),
-                     wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+      new wxTextCtrl(mainPanel, wxID_ANY, _("Debug messages appear here\n"), wxDefaultPosition,
+      wxDefaultSize, wxTE_READONLY | wxTE_MULTILINE);
   debug_redirector = new wxStreamToTextRedirector(debugWindow);
   debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
   frameSizer->Add(debugPanelSizer, 1, wxEXPAND);
@@ -323,6 +324,7 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
     wxString mess = wxString::Format(
         _("%s:%d No data. Please open SnP file first."), __FILE__, __LINE__);
     wxLogError(mess);
+    cout << mess << "\n";
     return;
   }
 
@@ -339,23 +341,27 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
 
 void MyFrame::OnMkASY(wxCommandEvent& event) {
   //  wxMessageBox("Symbol button pressed.");
-
   wxBusyCursor wait;
   bool res = SData.writeSymFile(this);
-  if (res)
-    SetStatusText(
+  if (res) {
+    wxString mess(
         wxString::Format(_("S2spice: Symbol file %s successfully created."),
                          SData.getASYfile().GetFullPath()));
+    SetStatusText(mess);
+    cout << mess << "\n";
+  }
 }
 
 void MyFrame::OnOpen(wxCommandEvent& event) {
+  wxString mess;
   if (SData.openSFile(this))
-    SetStatusText(
-        wxString::Format(_("S2spice: Data successfully imported from %s."),
-                         SData.getSNPfile().GetFullPath()));
+    mess = wxString::Format(_("S2spice: Data successfully imported from %s."),
+                            SData.getSNPfile().GetFullPath());
   else
-    SetStatusText(wxString::Format(_("S2spice: Data import failed from %s!"),
-                                   SData.getSNPfile().GetFullPath()));
+    mess = wxString::Format(_("S2spice: Data import failed from %s!"),
+                            SData.getSNPfile().GetFullPath());
+  SetStatusText(mess);
+  cout << mess << "\n";
 }
 
 void MyFrame::OnAbout(wxCommandEvent& event) {
@@ -371,6 +377,6 @@ void MyFrame::OnAbout(wxCommandEvent& event) {
             "and save library (LIB) and symbol (ASY) files.\n"
             "wxWidgets version: %s\n"
             "Running on: %s\n"),
-          info.ToString(), wxGetOsDescription()),
+          info.GetVersionString(), wxGetOsDescription()),
       _("About S2spice"), wxOK | wxICON_INFORMATION, this);
 }
