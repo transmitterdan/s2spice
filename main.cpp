@@ -285,13 +285,17 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   wxSizer* debugPanelSizer =
       new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Debug Messages");
   // wxPanel* txtPanel = new wxPanel(this, -1);
+  wxColour txtClr(0,180,0);
+  wxColour bkgdClr(*wxBLACK);
   wxTextCtrl* debugWindow =
       new wxTextCtrl(mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
-      wxDefaultSize, wxTE_READONLY | wxTE_MULTILINE);
+      wxDefaultSize, wxTE_READONLY | wxTE_MULTILINE | wxTE_RICH2);
+  debugWindow->SetBackgroundColour(bkgdClr);
   debug_redirector = new wxStreamToTextRedirector(debugWindow);
   debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
   frameSizer->Add(debugPanelSizer, 1, wxEXPAND);
   debugPanelSizer->SetSizeHints(this);
+  debugWindow->SetDefaultStyle(wxTextAttr(txtClr, bkgdClr));
 
   mainPanel->SetSizer(frameSizer);
   frameSizer->SetSizeHints(this);
