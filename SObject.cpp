@@ -66,14 +66,14 @@ SObject::~SObject() {
 
 bool SObject::openSFile(wxWindow* parent) {
 #if defined(_WIN32) || defined(_WIN64)
-  char const* WildcardStr = "S paramter (*.snp)|*.s?p|All files (*.*)|*.*";
+  char const* WildcardStr = "S paramter (*.snp)|*.S?P;S??P|All files (*.*)|*.*";
 #else
   // On non-Windows platforms we try to find mostly snp files but
   // they don't all allow ? as a wildcard
   char const* WildcardStr = "S paramter (*p)|*p;*P|All files (*)|*";
 #endif
   if (!dataSaved()) {
-    if (wxMessageBox(_("Current content has not been saved! Proceed?"),
+    if (wxMessageBox(_("Current content has not been saved!\nDiscard current data?"),
                      _("Please confirm"), wxICON_QUESTION | wxYES_NO,
                      parent) == wxNO)
       return false;
