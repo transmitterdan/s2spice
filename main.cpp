@@ -270,16 +270,16 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   // Create the buttons
   wxButton* openButton = new wxButton(mainPanel, wxID_ANY, _("Open"));
   openButton->Bind(wxEVT_BUTTON, &MyFrame::OnOpen, this);
-  buttonRowSizer->Add(openButton, wxLEFT);
+  buttonRowSizer->Add(openButton, wxALIGN_LEFT);
   wxButton* libButton = new wxButton(mainPanel, wxID_ANY, _("Save LIB"));
   libButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkLIB, this);
-  buttonRowSizer->Add(libButton, wxLEFT);
+  buttonRowSizer->Add(libButton, wxALIGN_LEFT);
   wxButton* symButton = new wxButton(mainPanel, wxID_ANY, _("Save SYM"));
   symButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkASY, this);
-  buttonRowSizer->Add(symButton, wxLEFT);
+  buttonRowSizer->Add(symButton, wxALIGN_LEFT);
   wxButton* aboutButton = new wxButton(mainPanel, wxID_ABOUT, _("About..."));
   aboutButton->Bind(wxEVT_BUTTON, &MyFrame::OnAbout, this);
-  buttonRowSizer->Add(aboutButton, wxLeft);
+  buttonRowSizer->Add(aboutButton, wxALIGN_LEFT);
   frameSizer->Add(buttonRowSizer);
 
   wxSizer* debugPanelSizer =
