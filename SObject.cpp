@@ -266,23 +266,21 @@ bool SObject::WriteLIB() {
                                        2 * Z0));
   }
 
-  const int charMAX = 2048;
   output_stream << "\n";
-  char* out = new char[charMAX + 1];
   for (int i = 0; i < numPorts; i++) {
     for (int j = 0; j < numPorts; j++) {
-      snprintf(out, charMAX, "*S%d%d FREQ DB PHASE\n", i + 1, j + 1);
-      output_stream << out;
+      output_stream << wxString::Format("* S%d%d FREQ DB PHASE\n ", i + 1,
+                                        j + 1);
       if (j + 1 == numPorts) {
-        snprintf(out, charMAX, "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, npMult * (i + 1) + j + 1, numPorts + 1,
-                 npMult * (j + 1), numPorts + 1);
-        output_stream << out;
+        output_stream << wxString::Format(
+            "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
+            npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
+            numPorts + 1);
       } else {
-        snprintf(out, charMAX, "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
-                 npMult * (j + 1), numPorts + 1);
-        output_stream << out;
+        output_stream << wxString::Format(
+            "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
+            npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
+            npMult * (j + 1), numPorts + 1);
       }
       double offset = 0;
       double prevph = 0;
@@ -293,14 +291,12 @@ bool SObject::WriteLIB() {
           offset = offset - 360.0 * (double)signbit(prevph - phs);
         }
         prevph = phs;
-        snprintf(out, charMAX, "+(%14eHz,%14e,%14e)\n", sparam.Freq, dB,
-                 phs + offset);
-        output_stream << out;
+        output_stream << wxString::Format("+(%14eHz,%14e,%14e)\n", sparam.Freq,
+                                          dB, phs + offset);
       }
       output_stream << "\n";
     }
   }
-  delete[] out;
   output_stream << ".ENDS * " << lib_file.GetName() << "\n";
   output_stream.close();
   data_saved = true;
