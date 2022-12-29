@@ -60,9 +60,7 @@ SObject::SObject() {
   be_quiet = false;
 }
 
-SObject::~SObject() {
-  Clean();
-}
+SObject::~SObject() { Clean(); }
 
 bool SObject::openSFile(wxWindow* parent) {
 #if defined(_WIN32) || defined(_WIN64)
@@ -73,9 +71,9 @@ bool SObject::openSFile(wxWindow* parent) {
   char const* WildcardStr = "S paramter (*p)|*p;*P|All files (*)|*";
 #endif
   if (!dataSaved()) {
-    if (wxMessageBox(_("Current content has not been saved!\nDiscard current data?"),
-                     _("Please confirm"), wxICON_QUESTION | wxYES_NO,
-                     parent) == wxNO)
+    if (wxMessageBox(
+            _("Current content has not been saved!\nDiscard current data?"),
+            _("Please confirm"), wxICON_QUESTION | wxYES_NO, parent) == wxNO)
       return false;
   }
   wxFileDialog openFileDialog(parent, _("Open SnP file"), "", "", WildcardStr,
@@ -100,10 +98,10 @@ bool SObject::readSFile(wxFileName& SFile) {
   wxString cwd = wxGetCwd();
 #endif
   if (!snp_file.FileExists()) {
-    wxString mess =
-        wxString::Format(_("[%s:%d]\nFile '%s' does not exist.\n"
-                           "Current working directory: '%s'"),
-                         __FILE__, __LINE__, snp_file.GetFullPath(), wxGetCwd());
+    wxString mess = wxString::Format(_("[%s:%d]\nFile '%s' does not exist.\n"
+                                       "Current working directory: '%s'"),
+                                     __FILE__, __LINE__, snp_file.GetFullPath(),
+                                     wxGetCwd());
     // DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
     if (be_quiet) {
       cout << mess << endl;
@@ -229,7 +227,9 @@ bool SObject::WriteLIB() {
   int npMult = 100;
   ofstream output_stream(libName);
   if (!output_stream) {
-    wxString mess = wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."), __FILE__, __LINE__ , libName);
+    wxString mess =
+        wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."),
+                         __FILE__, __LINE__, libName);
     if (be_quiet) {
       cout << mess << endl;
     } else {
@@ -261,8 +261,9 @@ bool SObject::WriteLIB() {
     output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
                                        npMult * (i + 1), -Z0)
                           .c_str());
-    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1, npMult * (i + 1),
-                                       npMult * (i + 1) + 1, 2 * Z0));
+    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1,
+                                       npMult * (i + 1), npMult * (i + 1) + 1,
+                                       2 * Z0));
   }
 
   const int charMAX = 2048;
@@ -274,11 +275,13 @@ bool SObject::WriteLIB() {
       output_stream << out;
       if (j + 1 == numPorts) {
         snprintf(out, charMAX, "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1), numPorts + 1);
+                 j + 1, npMult * (i + 1) + j + 1, numPorts + 1,
+                 npMult * (j + 1), numPorts + 1);
         output_stream << out;
       } else {
         snprintf(out, charMAX, "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1,
-                 j + 1, npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2, npMult * (j + 1), numPorts + 1);
+                 j + 1, npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
+                 npMult * (j + 1), numPorts + 1);
         output_stream << out;
       }
       double offset = 0;
@@ -318,7 +321,8 @@ bool SObject::writeSymFile(wxWindow* parent) {
 bool SObject::WriteASY() {
   if (numPorts < 1) {
     wxString mess = wxString::Format(
-        _("%s:%d No data. Please open SnP file and make LIB first."),__FILE__, __LINE__);
+        _("%s:%d No data. Please open SnP file and make LIB first."), __FILE__,
+        __LINE__);
     if (be_quiet) {
       cout << mess << endl;
     } else {
@@ -332,7 +336,8 @@ bool SObject::WriteASY() {
   sym = Symbol(asy_file.GetName().ToStdString());
 
   if (sym.empty()) {
-    wxString mess = wxString::Format(_("%s:%d Error creating symbol '%s'."), __FILE__, __LINE__, asy_file.GetName());
+    wxString mess = wxString::Format(_("%s:%d Error creating symbol '%s'."),
+                                     __FILE__, __LINE__, asy_file.GetName());
     if (be_quiet) {
       cout << mess << endl;
     } else {
@@ -344,7 +349,8 @@ bool SObject::WriteASY() {
   string symName(asy_file.GetFullPath().ToStdString());
   ofstream output_stream(symName);
   if (!output_stream) {
-    wxString mess = wxString::Format(_("%s:%d Cannot create file '%s'."), __FILE__, __LINE__, symName);
+    wxString mess = wxString::Format(_("%s:%d Cannot create file '%s'."),
+                                     __FILE__, __LINE__, symName);
     if (be_quiet) {
       cout << mess << endl;
     } else {
@@ -404,8 +410,9 @@ bool SObject::Convert2S() {
         }
       }
     } else {
-      wxString mess = wxString::Format(wxString::Format("%s:%d Cannot read file '%s'."),__FILE__,__LINE__,
-                 snp_file.GetFullPath());
+      wxString mess =
+          wxString::Format(wxString::Format("%s:%d Cannot read file '%s'."),
+                           __FILE__, __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
       } else {
