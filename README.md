@@ -49,7 +49,8 @@ When s2spice starts the GUI window looks like this:
 ![Screenshot 1](Test/Screenshot%201.png)
 
 Click the "Open" button (or press ctrl-O, or use menu File->Open)
-In the file dialog navigate to the supplied "Test" folder and select one of the S-parameter files supplied with s2spice and click Open button.  Here we selected: AD6PS-1+___+25.S7P 
+In the file dialog navigate to the supplied "Test" folder and select one of the S-parameter files supplied with s2spice and click Open button.  Here we selected: AD6PS-1+___+25.S7P
+
 ![Screenshot 2](Test/Screenshot%202.png)
 
 Now simply press the 'Make LIB' and/or 'Make SYM' buttons to create Spice library file.  The symbol created is for LTspice.
