@@ -8,7 +8,9 @@ Another feature is the ability to create LTspice symbol (.ASY) files making it e
 
 ### Usage:
 
-Usage is mostly self explanatory.  There are buttons for the following actions:
+Usage is mostly self explanatory.  The program is designed to run on a variety of operating systems including Linux and WIndows.  It should also compile and run under MacOS, however I don't have a compiler or system for testing.
+
+There are buttons (and menu options) for the following actions:
 
 Open, Make LIB, Make SYM, Quit
 
@@ -38,21 +40,25 @@ Exit the program.
 
 ![LTspice schematic](Test/Screenshot%206.png)
 
-## Linux Usage Example 
+## Windows Usage Example 
 ```
-cd ~/myProjects/s2spice/Test ;go to the test folder under s2spice
-../build/s2spice
+cd \myProjects\s2spice\build\Release | REM go to the Release folder under s2spice
+s2spice.exe
 ```
-When s2spice starts the window looks like this:
+When s2spice starts the GUI window looks like this:
 ![Screenshot 1](Test/Screenshot%201.png)
 
 Click the "Open" button (or press ctrl-O, or use menu File->Open)
-In the file dialog select one of the S-parameter files supplied with s2spice and click Open button.  Here we selected: AD6PS-1+___+25.S7P 
+In the file dialog navigate to the supplied "Test" folder and select one of the S-parameter files supplied with s2spice and click Open button.  Here we selected: AD6PS-1+___+25.S7P 
 ![Screenshot 2](Test/Screenshot%202.png)
 
 Now simply press the 'Make LIB' and/or 'Make SYM' buttons to create Spice library file.  The symbol created is for LTspice.
 
-You can open additional files and create more library files and symbols.
+You can open additional files and create more library files and symbols.  For example, open file BBP-20R5+_Plus25degC.s2p and make LIB and SYM files.
+
+Demonstrate the newly created components using the supplied LTspice simulation file 'test.asc' found in the Test folder. If you created the necessary LIB and ASY files it should demonstrate the frequency response of a Mini-Circuits 6-way splitter and a bandpass filter.
+
+Any symbols and library files you create from your own S-parameter files can be easily added to a schematic the same way as adding any other device.  Use the 'F2' button or the 'Component' ```NAND``` gate tool.
 
 ## Command Line Usage
 The program also operates from the command line.  This allows to use s2spice in a batch file or simply when you don't need to use the GUI.
