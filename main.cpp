@@ -264,7 +264,6 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
   wxBoxSizer* frameSizer = new wxBoxSizer(wxVERTICAL);
   wxPanel* mainPanel = new wxPanel(this);
-  this->Show();
   wxSizer* buttonRowSizer = new wxBoxSizer(wxHORIZONTAL);
 
   // Create the buttons
@@ -283,8 +282,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
   frameSizer->Add(buttonRowSizer);
 
   wxSizer* debugPanelSizer =
-      new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Debug Messages");
-  // wxPanel* txtPanel = new wxPanel(this, -1);
+      new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Log Messages");
   wxColour txtClr(0,180,0);
   wxColour bkgdClr(*wxBLACK);
   wxTextCtrl* debugWindow =
@@ -299,6 +297,12 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
   mainPanel->SetSizer(frameSizer);
   frameSizer->SetSizeHints(this);
+  Layout();
+  wxSize sz = GetSize();
+  sz.y = sz.y * 2;
+  sz.x = sz.x * 2;
+  SetMinSize(sz);
+  Show();
 }
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
