@@ -56,7 +56,7 @@ You can open additional files and create more library files and symbols.
 
 ## Command Line Usage
 The program also operates from the command line.  This allows to use s2spice in a batch file or simply when you don't need to use the GUI.
-
+```
 Usage: s2spice [-h] [-f] [-l] [-s] [-q] [file name...]
   -h, --help    displays command line options
   -f, --force   overwrite any existing file
@@ -65,11 +65,11 @@ Usage: s2spice [-h] [-f] [-l] [-s] [-q] [file name...]
   -q, --quiet   disables the GUI (for command line only usage)
 
   [file name] is one or more names of a S-parameter file you wish to read.  If you do not use the -q (quiet) option then after processing each file on the command line the GUI will open.
-
+```
   If you are using Windows you can automate processing of several *.snp files like this:
-
-  # for %a in (*.s?p) DO s2spice /f /l /s %a
-
+```
+ for %a in (*.s?p) DO s2spice /f /l /s %a
+```
 ## ___THE NEXT PART IS FOR EXPERIENCED DEVELOPERS ONLY___
 
 ### Building for Linux
