@@ -64,7 +64,9 @@ Usage: s2spice [-h] [-f] [-l] [-s] [-q] [file name...]
   -s, --symbol  creates ASY symbol file
   -q, --quiet   disables the GUI (for command line only usage)
 
-  [file name] is one or more names of a S-parameter file you wish to read.  If you do not use the -q (quiet) option then after processing each file on the command line the GUI will open.
+  [file name] is one or more names of a S-parameter file you wish to read.
+  If you do not use the -q (quiet) option then after processing each file 
+  on the command line the GUI will open.
 ```
   If you are using Windows you can automate processing of several *.snp files like this:
 ```
