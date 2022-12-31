@@ -9,6 +9,7 @@
 :: Install the pathman tool: https://github.com/therootcompany/pathman
 :: Fix PATH so it can be used in this script
 ::
+where curl.exe
 if not exist "%HomeDrive%%HomePath%\.local\bin\pathman.exe" (
     pushd "%HomeDrive%%HomePath%"
     curl.exe -sA "MS" https://webinstall.dev/pathman | powershell
