@@ -68,6 +68,7 @@ pathman add "%wxWidgets_LIB_DIR%" > nul
 "%VSINSTALLDIR%VC\Redist\MSVC\v143\vc_redist.x86.exe" /log log.txt /passive /install
 type log.txt
 dir /s "%PROGRAMFILES(x86)%\api-ms-win-crt-locale-l1-1-0.dll"
+where api-ms-win-crt-locale-l1-1-0.dll
 
 refreshenv
 
