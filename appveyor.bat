@@ -12,7 +12,7 @@ if errorlevel 1 (
   call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
 )
 
-call %APPVEYOR_BUILD_FOLDER%\github_windeps.bat
+call %APPVEYOR_BUILD_FOLDER%\github-windeps.bat
 
 where wxmsw32u_qa_vc14x.dll >nul 2>&1
 if errorlevel 1 (
