@@ -25,6 +25,14 @@
  *
  ***************************************************************************/
 
+// Enable leak detection under windows
+// For Linux use valgrind or other leak detection tool
+#if !defined(NDEBUG) && defined(__WINDOWS__)
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 #include <wx/wxprec.h>
 #ifndef WX_PRECOMP
 #include <wx/wx.h>
@@ -67,12 +75,13 @@ public:
 
 private:
   bool silent_mode = 0;
+  bool force_mode = 0;
 };
 
 // This is the main event handler for the program
 class MyFrame : public wxFrame {
 public:
-  MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+  MyFrame(const wxString& title, const bool force_mode, const wxPoint& pos, const wxSize& size);
 
 private:
   SObject SData;
@@ -141,7 +150,11 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
 // This is the implementation of the MyApp class
 int MyApp::OnRun() {
   int exitcode = wxApp::OnRun();
-  // wxTheClipboard->Flush();
+#if !defined(NDEBUG) && !defined(__WINDOWS__)
+  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF |
+                 _CRTDBG_LEAK_CHECK_DF);
+// wxTheClipboard->Flush();
+#endif
   return exitcode;
 }
 
@@ -154,11 +167,11 @@ void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
 bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
   // any remaining params should be the S-parameter file names
   int pCount = parser.GetParamCount();
-  if (pCount == 0) return true;
 
   // If silent mode requested don't start the GUI
   // after handling all the comand line file names
   silent_mode = parser.Found(_("q"));
+  force_mode = parser.Found(_("f"));
   SObject SData1;
   SData1.SetQuiet(silent_mode);
   for (int i = 0; i < pCount; i++) {
@@ -205,7 +218,7 @@ bool MyApp::OnInit() {
   if (!wxApp::OnInit()) return false;
 
   // Create the main window
-  MyFrame* frame = new MyFrame(_("S2spice"), wxPoint(50, 50), wxSize(640, 480));
+  MyFrame* frame = new MyFrame(_("S2spice"), force_mode, wxPoint(50, 50), wxSize(640, 480));
   frame->Show(true);
 
   return true;
@@ -219,8 +232,9 @@ int MyApp::OnExit() {
 // This is the implementation of the GUI
 // If user selects -q at the command line the GUI is not shown unless -h is also
 // used
-MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
+MyFrame::MyFrame(const wxString& title, const bool force_mode, const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
+  SData.SetForce(force_mode);
   debugFlag = true;
   debug_redirector = NULL;
 #if defined(__WXMSW__)

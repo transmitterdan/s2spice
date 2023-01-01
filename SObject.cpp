@@ -212,7 +212,7 @@ bool SObject::readSFile(wxFileName& SFile) {
 }
 
 bool SObject::writeLibFile(wxWindow* parent) {
-  if (lib_file.FileExists()) {
+  if (lib_file.FileExists() && !GetForce()) {
     wxString mess = wxString::Format(_("Library file '%s' exists. Overwrite?"),
                                      lib_file.GetFullPath());
     if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,
@@ -304,7 +304,7 @@ bool SObject::WriteLIB() {
 }
 
 bool SObject::writeSymFile(wxWindow* parent) {
-  if (asy_file.FileExists()) {
+  if (asy_file.FileExists() && !GetForce()) {
     wxString mess = wxString::Format(_("Symbol file '%s' exists. Overwrite?"),
                                      asy_file.GetFullPath());
     if (wxMessageBox(mess, _("Please confirm"), wxICON_QUESTION | wxYES_NO,

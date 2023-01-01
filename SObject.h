@@ -86,6 +86,12 @@ public:
     return res;
   };
   bool GetQuiet() { return be_quiet; };
+  bool SetForce(bool flag) {
+    bool res = force;
+    force = flag;
+    return res;
+  };
+  bool GetForce() { return force; };
   void Clean();
 
 private:
@@ -94,6 +100,7 @@ private:
   wxArrayString comment_strings;  // String array of comments from SnP file
   bool data_saved;                // have we saved in imported S-parameter file
   bool be_quiet;
+  bool force;           // force overwrite of files without complaining
   int numPorts;         // number of ports in this file (comes from file name)
   wxFileName snp_file;  // file that is currently loaded
   wxFileName asy_file;
