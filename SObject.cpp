@@ -53,7 +53,7 @@ Sparam::Sparam(std::size_t _n) {
 }
 
 SObject::SObject() {
-  data_saved = true;
+  Clean();
   numPorts = 0;
   fUnits = 0;
   Z0 = 50;

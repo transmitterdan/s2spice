@@ -85,18 +85,17 @@ public:
   virtual int OnRun();
 
 private:
-  bool silent_mode = 0;
-  bool force_mode = 0;
+  SObject SData1;
 };
 
 // This is the main event handler for the program
 class MyFrame : public wxFrame {
 public:
-  MyFrame(const wxString& title, const bool force_mode, const wxPoint& pos,
+  MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
           const wxSize& size);
 
 private:
-  SObject SData;
+  SObject *SData;
   bool debugFlag;
   wxStreamToTextRedirector* debug_redirector;
   // This function is called when the "Open" button is clicked
@@ -181,21 +180,19 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
 
   // If silent mode requested don't start the GUI
   // after handling all the comand line file names
-  silent_mode = parser.Found(_("q"));
-  force_mode = parser.Found(_("f"));
-  SObject SData1;
-  SData1.SetQuiet(silent_mode);
+  SData1.SetQuiet(parser.Found(_("q")));
+  SData1.SetForce(parser.Found(_("f")));
   for (int i = 0; i < pCount; i++) {
     wxFileName SFile(parser.GetParam(i));
     if (!SData1.readSFile(SFile)) return false;
 
     // Should we create the symbol file?
     if (parser.Found(_("s"))) {
-      if (SData1.getASYfile().Exists() && !parser.Found(_("f"))) {
+      if (SData1.getASYfile().Exists() && !SData1.GetForce()) {
         wxString mess = wxString::Format(
             _("%s:%d ASY file %s already exists.  Delete it first."), __FILE__,
             __LINE__, SData1.getASYfile().GetFullPath().c_str());
-        if (silent_mode) {
+        if (SData1.GetQuiet()) {
           cout << mess << endl;
         } else {
           wxLogError(mess);
@@ -207,11 +204,11 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
 
     // Should we create the library file?
     if (parser.Found(_("l"))) {
-      if (SData1.getLIBfile().Exists() && !parser.Found(_("f"))) {
+      if (SData1.getLIBfile().Exists() && !SData1.GetForce()) {
         wxString mess = wxString::Format(
             _("%s:%d LIB file %s already exists.  Delete it first."), __FILE__,
             __LINE__, SData1.getLIBfile().GetFullPath().c_str());
-        if (silent_mode) {
+        if (SData1.GetQuiet()) {
           cout << mess << endl;
         } else {
           wxLogError(mess);
@@ -221,7 +218,7 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
       if (!SData1.WriteLIB()) return false;
     }
   }
-  return !silent_mode;
+  return !SData1.GetQuiet();
 }
 
 bool MyApp::OnInit() {
@@ -229,7 +226,7 @@ bool MyApp::OnInit() {
   if (!wxApp::OnInit()) return false;
 
   // Create the main window
-  MyFrame* frame = DBG_NEW MyFrame(_("S2spice"), force_mode, wxPoint(50, 50),
+  MyFrame* frame = DBG_NEW MyFrame(_("S2spice"), &SData1, wxPoint(50, 50),
                                    wxSize(640, 480));
   frame->Show(true);
 
@@ -244,10 +241,10 @@ int MyApp::OnExit() {
 // This is the implementation of the GUI
 // If user selects -q at the command line the GUI is not shown unless -h is also
 // used
-MyFrame::MyFrame(const wxString& title, const bool force_mode,
+MyFrame::MyFrame(const wxString& title, SObject* SD,
                  const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
-  SData.SetForce(force_mode);
+  SData = SD;
   debugFlag = true;
   debug_redirector = NULL;
 #if defined(__WXMSW__)
@@ -340,7 +337,7 @@ void MyFrame::OnQuit(wxCommandEvent& event) {
 }
 
 void MyFrame::OnClose(wxCloseEvent& event) {
-  if (event.CanVeto() && !SData.dataSaved()) {
+  if (event.CanVeto() && !SData->dataSaved()) {
     if (wxMessageBox(
             _("The data has not been saved in library... continue closing?"),
             _("Please confirm"), wxICON_QUESTION | wxYES_NO) != wxYES) {
@@ -356,7 +353,7 @@ void MyFrame::OnClose(wxCloseEvent& event) {
 
 void MyFrame::OnMkLIB(wxCommandEvent& event) {
   //  wxMessageBox("Make LIB button pressed.");
-  if (SData.nPorts() < 1) {
+  if (SData->nPorts() < 1) {
     wxString mess = wxString::Format(
         _("%s:%d No data. Please open SnP file first."), __FILE__, __LINE__);
     wxLogError(mess);
@@ -365,11 +362,11 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   }
 
   wxBusyCursor wait;
-  bool res = SData.writeLibFile(this);
+  bool res = SData->writeLibFile(this);
   if (res) {
     wxString mess =
         wxString::Format(_("S2spice: Library file %s successfully created."),
-                         SData.getSNPfile().GetFullPath());
+                         SData->getSNPfile().GetFullPath());
     SetStatusText(mess);
     cout << mess << "\n";
   }
@@ -378,11 +375,11 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
 void MyFrame::OnMkASY(wxCommandEvent& event) {
   //  wxMessageBox("Symbol button pressed.");
   wxBusyCursor wait;
-  bool res = SData.writeSymFile(this);
+  bool res = SData->writeSymFile(this);
   if (res) {
     wxString mess(
         wxString::Format(_("S2spice: Symbol file %s successfully created."),
-                         SData.getASYfile().GetFullPath()));
+                         SData->getASYfile().GetFullPath()));
     SetStatusText(mess);
     cout << mess << "\n";
   }
@@ -390,12 +387,12 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
 
 void MyFrame::OnOpen(wxCommandEvent& event) {
   wxString mess;
-  if (SData.openSFile(this))
+  if (SData->openSFile(this))
     mess = wxString::Format(_("S2spice: Data successfully imported from %s."),
-                            SData.getSNPfile().GetFullPath());
+                            SData->getSNPfile().GetFullPath());
   else
     mess = wxString::Format(_("S2spice: Data import failed from %s!"),
-                            SData.getSNPfile().GetFullPath());
+                            SData->getSNPfile().GetFullPath());
   SetStatusText(mess);
   cout << mess << "\n";
 }

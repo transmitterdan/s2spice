@@ -128,6 +128,7 @@ inline void SObject::Clean() {
   SData.clear();
   data_strings.clear();
   comment_strings.clear();
+  data_saved = true;
 }
 
 #endif
