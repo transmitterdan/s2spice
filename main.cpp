@@ -26,7 +26,7 @@
  ***************************************************************************/
 
 #if defined(__WINDOWS__)
- // Enable leak detection under windows
+// Enable leak detection under windows
 // For Linux use valgrind or other leak detection tool
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -92,7 +92,8 @@ private:
 // This is the main event handler for the program
 class MyFrame : public wxFrame {
 public:
-  MyFrame(const wxString& title, const bool force_mode, const wxPoint& pos, const wxSize& size);
+  MyFrame(const wxString& title, const bool force_mode, const wxPoint& pos,
+          const wxSize& size);
 
 private:
   SObject SData;
@@ -156,14 +157,13 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
     {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
      wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
 
-    {wxCMD_LINE_NONE}};
+    wxCMD_LINE_DESC_END};
 
 // This is the implementation of the MyApp class
 int MyApp::OnRun() {
   int exitcode = wxApp::OnRun();
 #if !defined(NDEBUG) && defined(__WINDOWS__)
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF |
-                 _CRTDBG_LEAK_CHECK_DF);
+  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
   // wxTheClipboard->Flush();
   return exitcode;
@@ -229,7 +229,8 @@ bool MyApp::OnInit() {
   if (!wxApp::OnInit()) return false;
 
   // Create the main window
-  MyFrame* frame = DBG_NEW MyFrame(_("S2spice"), force_mode, wxPoint(50, 50), wxSize(640, 480));
+  MyFrame* frame = DBG_NEW MyFrame(_("S2spice"), force_mode, wxPoint(50, 50),
+                                   wxSize(640, 480));
   frame->Show(true);
 
   return true;
@@ -243,7 +244,8 @@ int MyApp::OnExit() {
 // This is the implementation of the GUI
 // If user selects -q at the command line the GUI is not shown unless -h is also
 // used
-MyFrame::MyFrame(const wxString& title, const bool force_mode, const wxPoint& pos, const wxSize& size)
+MyFrame::MyFrame(const wxString& title, const bool force_mode,
+                 const wxPoint& pos, const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
   SData.SetForce(force_mode);
   debugFlag = true;
@@ -301,18 +303,19 @@ MyFrame::MyFrame(const wxString& title, const bool force_mode, const wxPoint& po
   wxButton* symButton = DBG_NEW wxButton(mainPanel, wxID_ANY, _("Save SYM"));
   symButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkASY, this);
   buttonRowSizer->Add(symButton, wxALIGN_LEFT);
-  wxButton* aboutButton = DBG_NEW wxButton(mainPanel, wxID_ABOUT, _("About..."));
+  wxButton* aboutButton =
+      DBG_NEW wxButton(mainPanel, wxID_ABOUT, _("About..."));
   aboutButton->Bind(wxEVT_BUTTON, &MyFrame::OnAbout, this);
   buttonRowSizer->Add(aboutButton, wxALIGN_LEFT);
   frameSizer->Add(buttonRowSizer);
 
   wxSizer* debugPanelSizer =
       DBG_NEW wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Log Messages");
-  wxColour txtClr(0,180,0);
+  wxColour txtClr(0, 180, 0);
   wxColour bkgdClr(*wxBLACK);
-  wxTextCtrl* debugWindow =
-      DBG_NEW wxTextCtrl(mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
-      wxDefaultSize, wxTE_READONLY | wxTE_MULTILINE | wxTE_RICH2);
+  wxTextCtrl* debugWindow = DBG_NEW wxTextCtrl(
+      mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize,
+      wxTE_READONLY | wxTE_MULTILINE | wxTE_RICH2);
   debugWindow->SetBackgroundColour(bkgdClr);
   debug_redirector = DBG_NEW wxStreamToTextRedirector(debugWindow);
   debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
