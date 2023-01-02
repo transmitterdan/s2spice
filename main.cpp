@@ -25,12 +25,23 @@
  *
  ***************************************************************************/
 
-// Enable leak detection under windows
+#if defined(__WINDOWS__)
+ // Enable leak detection under windows
 // For Linux use valgrind or other leak detection tool
-#if !defined(NDEBUG) && defined(__WINDOWS__)
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
+
+#ifdef _DEBUG
+#define DBG_NEW new (_NORMAL_BLOCK, __FILE__, __LINE__)
+// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
+// allocations to be of _CLIENT_BLOCK type
+#else
+#define DBG_NEW new
+#endif
+
+#else
+#define DBG_NEW new
 #endif
 
 #include <wx/wxprec.h>
@@ -150,11 +161,11 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
 // This is the implementation of the MyApp class
 int MyApp::OnRun() {
   int exitcode = wxApp::OnRun();
-#if !defined(NDEBUG) && !defined(__WINDOWS__)
+#if !defined(NDEBUG) && defined(__WINDOWS__)
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF |
                  _CRTDBG_LEAK_CHECK_DF);
-// wxTheClipboard->Flush();
 #endif
+  // wxTheClipboard->Flush();
   return exitcode;
 }
 
@@ -218,7 +229,7 @@ bool MyApp::OnInit() {
   if (!wxApp::OnInit()) return false;
 
   // Create the main window
-  MyFrame* frame = new MyFrame(_("S2spice"), force_mode, wxPoint(50, 50), wxSize(640, 480));
+  MyFrame* frame = DBG_NEW MyFrame(_("S2spice"), force_mode, wxPoint(50, 50), wxSize(640, 480));
   frame->Show(true);
 
   return true;
@@ -240,16 +251,16 @@ MyFrame::MyFrame(const wxString& title, const bool force_mode, const wxPoint& po
 #if defined(__WXMSW__)
   SetIcon(wxICON(IDI_ICON1));
 #endif
-  auto menuFile = new wxMenu();
+  auto menuFile = DBG_NEW wxMenu();
   menuFile->Append(ID_OPEN, _("&Open...\tCtrl-O"), _("Open SnP file"));
   menuFile->AppendSeparator();
   menuFile->Append(ID_MKLIB, _("&Save LIB...\tCtrl-L"), _("Save Library file"));
   menuFile->Append(ID_MKSYM, _("&Save ASY...\tCtrl-L"), _("Save Symbol file"));
   menuFile->Append(wxID_EXIT);
 
-  auto menuHelp = new wxMenu();
+  auto menuHelp = DBG_NEW wxMenu();
   menuHelp->Append(wxID_ABOUT);
-  auto menuBar = new wxMenuBar();
+  auto menuBar = DBG_NEW wxMenuBar();
 
   menuBar->Append(menuFile, _("&File"));
   menuBar->Append(menuHelp, _("&Help"));
@@ -276,34 +287,34 @@ MyFrame::MyFrame(const wxString& title, const bool force_mode, const wxPoint& po
       event.Skip();
   });
 
-  wxBoxSizer* frameSizer = new wxBoxSizer(wxVERTICAL);
-  wxPanel* mainPanel = new wxPanel(this);
-  wxSizer* buttonRowSizer = new wxBoxSizer(wxHORIZONTAL);
+  wxBoxSizer* frameSizer = DBG_NEW wxBoxSizer(wxVERTICAL);
+  wxPanel* mainPanel = DBG_NEW wxPanel(this);
+  wxSizer* buttonRowSizer = DBG_NEW wxBoxSizer(wxHORIZONTAL);
 
   // Create the buttons
-  wxButton* openButton = new wxButton(mainPanel, wxID_ANY, _("Open"));
+  wxButton* openButton = DBG_NEW wxButton(mainPanel, wxID_ANY, _("Open"));
   openButton->Bind(wxEVT_BUTTON, &MyFrame::OnOpen, this);
   buttonRowSizer->Add(openButton, wxALIGN_LEFT);
-  wxButton* libButton = new wxButton(mainPanel, wxID_ANY, _("Save LIB"));
+  wxButton* libButton = DBG_NEW wxButton(mainPanel, wxID_ANY, _("Save LIB"));
   libButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkLIB, this);
   buttonRowSizer->Add(libButton, wxALIGN_LEFT);
-  wxButton* symButton = new wxButton(mainPanel, wxID_ANY, _("Save SYM"));
+  wxButton* symButton = DBG_NEW wxButton(mainPanel, wxID_ANY, _("Save SYM"));
   symButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkASY, this);
   buttonRowSizer->Add(symButton, wxALIGN_LEFT);
-  wxButton* aboutButton = new wxButton(mainPanel, wxID_ABOUT, _("About..."));
+  wxButton* aboutButton = DBG_NEW wxButton(mainPanel, wxID_ABOUT, _("About..."));
   aboutButton->Bind(wxEVT_BUTTON, &MyFrame::OnAbout, this);
   buttonRowSizer->Add(aboutButton, wxALIGN_LEFT);
   frameSizer->Add(buttonRowSizer);
 
   wxSizer* debugPanelSizer =
-      new wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Log Messages");
+      DBG_NEW wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Log Messages");
   wxColour txtClr(0,180,0);
   wxColour bkgdClr(*wxBLACK);
   wxTextCtrl* debugWindow =
-      new wxTextCtrl(mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
+      DBG_NEW wxTextCtrl(mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
       wxDefaultSize, wxTE_READONLY | wxTE_MULTILINE | wxTE_RICH2);
   debugWindow->SetBackgroundColour(bkgdClr);
-  debug_redirector = new wxStreamToTextRedirector(debugWindow);
+  debug_redirector = DBG_NEW wxStreamToTextRedirector(debugWindow);
   debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
   frameSizer->Add(debugPanelSizer, 1, wxEXPAND);
   debugPanelSizer->SetSizeHints(this);
