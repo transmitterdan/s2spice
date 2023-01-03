@@ -52,6 +52,7 @@ cd \myProjects\s2spice\build\Release | REM go to the Release folder under s2spic
 s2spice.exe
 ```
 When s2spice starts the GUI window looks like this:
+
 ![Screenshot 1](Test/Screenshot%201.png)
 
 Click the "Open" button (or press ctrl-O, or use menu File->Open)
