@@ -19,8 +19,3 @@ install:
 
 build_script:
   - call .\appveyor.bat
-
-deploy_script:
-  - |
-    cd %APPVEYOR_BUILD_FOLDER%\ci
-    "\Program Files\Git\bin\bash" appveyor-upload.sh
