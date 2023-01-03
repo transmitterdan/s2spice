@@ -6,6 +6,12 @@ S2spice is a GUI utility program that reads S-Parameter files in Touchstone form
 
 Another feature is the ability to create LTspice symbol (.ASY) files making it easier to add the new library file to a schematic.
 
+### Download:
+
+## Binary installation for Windows
+
+https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/names/s2spice/versions/1.0.0/setup.zip
+
 ### Usage:
 
 Usage is mostly self explanatory.  The program is designed to run on a variety of operating systems including Linux and WIndows.  It should also compile and run under MacOS, however I don't have a compiler or system for testing.
@@ -46,6 +52,7 @@ cd \myProjects\s2spice\build\Release | REM go to the Release folder under s2spic
 s2spice.exe
 ```
 When s2spice starts the GUI window looks like this:
+
 ![Screenshot 1](Test/Screenshot%201.png)
 
 Click the "Open" button (or press ctrl-O, or use menu File->Open)
