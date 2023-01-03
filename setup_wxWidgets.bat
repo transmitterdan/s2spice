@@ -3,7 +3,7 @@ REM Run this batch file in the folder where you cloned s2spice.  For example, if
 REM cd myProjectsFolder
 REM git clone https:://github.com/transmitterdan/s2spice
 REM cd s2spice
-REM .\s2spice\setup_wxWidgets.bat
+REM .\setup_wxWidgets.bat
 REM ***************************************************************************
 REM * SETUP wxWidgets librarys.  We use the DLL (or shared library) versions. *    
 REM ***************************************************************************
