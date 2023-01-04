@@ -36,3 +36,5 @@ cmake -T v143 ^
     ..
 
 cmake --build . --config %CONFIGURATION%
+cmake --build . --config %CONFIGURATION% --target package
+
