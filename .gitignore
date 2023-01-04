@@ -1,6 +1,8 @@
 build
 wxWidgets-3.2.1
 .vscode
+.vs
+setup
 Test/*.lib
 Test/*.asy
 Test/*.log
