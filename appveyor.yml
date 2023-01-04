@@ -15,8 +15,8 @@ install:
   - set "VS_BASE=C:\Program Files\Microsoft Visual Studio\2022"
   - call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
 
-  - cmd: python3 --version
-  - cmd: python3 -m pip install cloudsmith-cli
+  - cmd: python --version
+  - cmd: python -m pip install cloudsmith-cli
 
 build_script:
   - call .\appveyor.bat
