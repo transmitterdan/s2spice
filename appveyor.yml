@@ -14,6 +14,7 @@ configuration: RelWithDebInfo
 install:
   - set "VS_BASE=C:\Program Files\Microsoft Visual Studio\2022"
   - call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
+  - choco install 7zip.install
 
   - cmd: python --version
   - cmd: python -m pip install cloudsmith-cli
