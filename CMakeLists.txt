@@ -17,6 +17,15 @@ endif (APPLE)
 
 project(${PACKAGE_NAME} LANGUAGES CXX)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
+# set the project version. 
+set(PROJECT_VER_PATCH 1)
+set(PROJECT_VER_MINOR 0)
+set(PROJECT_VER_MAJOR 1)
+
+set(PROJECT_VER "${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}.${PROJECT_VER_PATCH}")
+
 # guard against bad build-type strings
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -27,10 +36,11 @@ if (MSVC)
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
   endif (CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
-  set(wxWidgets_USE_UNICODE ON)
-  set(wxWidgets_USE_UNIVERSAL OFF)
-  set(wxWidgets_USE_STATIC BOOL::ON)
 endif (MSVC)
+
+set(wxWidgets_USE_UNICODE ON)
+set(wxWidgets_USE_UNIVERSAL OFF)
+set(wxWidgets_USE_STATIC OFF)
 
 # Find the wxWidgets library
 SET(wxWidgets_USE_LIBS base core)
@@ -38,12 +48,37 @@ find_package(wxWidgets REQUIRED)
 include(${wxWidgets_USE_FILE})
 
 # Add the source files
-if (MSVC)
-  add_executable (${PACKAGE_NAME} WIN32 main.cpp ${PACKAGE_NAME}.rc)
-  set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
-else (MSVC)
+if (WIN32)
+  if (MSVC)
+    add_executable (${PACKAGE_NAME} WIN32 main.cpp ${PACKAGE_NAME}.rc)
+    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
+    install(TARGETS ${PACKAGE_NAME} RUNTIME
+      DESTINATION bin COMPONENT binaries)
+    install(FILES ${CMAKE_SOURCE_DIR}/wxWidgets-3.2.1/lib/vc14x_dll/wxbase32u_vc14x.dll;
+                  ${CMAKE_SOURCE_DIR}/wxWidgets-3.2.1/lib/vc14x_dll/wxmsw32u_core_vc14x.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/MSVCP140.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/VCRUNTIME140.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-heap-l1-1-0.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-runtime-l1-1-0.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-string-l1-1-0.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-convert-l1-1-0.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-stdio-l1-1-0.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-filesystem-l1-1-0.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-math-l1-1-0.dll
+                  ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-locale-l1-1-0.dll
+            DESTINATION bin COMPONENT binaries)
+    file(GLOB TEST_LIST ${CMAKE_SOURCE_DIR}/Test/*.s?p
+                        ${CMAKE_SOURCE_DIR}/Test/*.asc
+                        ${CMAKE_SOURCE_DIR}/Test/*.plt
+                        ${CMAKE_SOURCE_DIR}/license.*
+        )
+    install(FILES ${TEST_LIST}
+      DESTINATION Test COMPONENT data_files)
+  endif (MSVC)
+else (WIN32)
   add_executable (${PACKAGE_NAME} main.cpp)
-endif (MSVC)
+  install(TARGETS ${PACKAGE_NAME} RUNTIME DESTINATION bin)
+endif (WIN32)
 
 add_library(SObject STATIC 
     SObject.cpp
@@ -53,5 +88,4 @@ add_library(SObject STATIC
 # Link the executable to the wxWidgets library
 target_link_libraries(${PACKAGE_NAME} ${wxWidgets_LIBRARIES} SObject)
 
-install(TARGETS ${PACKAGE_NAME} RUNTIME DESTINATION bin)
-include(CPack)
+include(CpackConfig)
