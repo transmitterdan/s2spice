@@ -6,24 +6,10 @@
 :: privileges.
 ::
 
-:: Install the pathman tool: https://github.com/therootcompany/pathman
-:: Fix PATH so it can be used in this script
-::
-where curl.exe
-if not exist "%HomeDrive%%HomePath%\.local\bin\pathman.exe" (
-    pushd "%HomeDrive%%HomePath%"
-    curl.exe -sA "MS" https://webinstall.dev/pathman | powershell
-    popd
-)
-pathman list > nul 2>&1
-if errorlevel 1 set PATH=%PATH%;%HomeDrive%\%HomePath%\.local\bin
-pathman add %HomeDrive%%HomePath%\.local\bin >nul
-
 :: Install choco cmake and add it's persistent user path element
 ::
-set CMAKE_HOME=C:\Program Files\CMake
-if not exist "%CMAKE_HOME%\bin\cmake.exe" choco install --no-progress -y cmake
-pathman add "%CMAKE_HOME%\bin" > nul
+:: set CMAKE_HOME=C:\Program Files\CMake
+:: if not exist "%CMAKE_HOME%\bin\cmake.exe" choco install --no-progress -y cmake
 
 :: Update required python stuff
 ::
@@ -61,10 +47,3 @@ for /f "tokens=*" %%a in ('dir /b %wxWidgets_ROOT_DIR%\lib') do (
     set VAR=%%a
 )
 set "WxWidgets_LIB_DIR=%wxWidgets_ROOT_DIR%\lib\%VAR%"
-
-pathman add "%WXWIN%" > nul
-pathman add "%wxWidgets_LIB_DIR%" > nul
-
-refreshenv
-
-
