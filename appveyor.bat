@@ -41,4 +41,5 @@ cmake --build . --config %CONFIGURATION% --target package
 REM deploy:
 7z a -tzip s2spice.zip *.exe
 echo %CLOUDSMITH_REPO%
+cloudsmith token
 cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip --version "1.0.1" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"

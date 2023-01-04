@@ -19,7 +19,7 @@ python --version
 python -m ensurepip
 python -m pip install --upgrade pip
 python -m pip install -q setuptools wheel
-python -m pip install -q cloudsmith-cli
+python -m pip install -q --upgrade cloudsmith-cli
 python -m pip install -q cryptography
 
 :: Install 7z if needed
