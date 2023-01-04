@@ -16,8 +16,5 @@ install:
   - call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
   - choco install 7zip.install
 
-  - cmd: python --version
-  - cmd: python -m pip install cloudsmith-cli
-
 build_script:
   - call .\appveyor.bat
