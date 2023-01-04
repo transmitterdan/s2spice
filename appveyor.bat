@@ -35,7 +35,6 @@ cmake -T v143 ^
     -DOCPN_CI_BUILD=ON ^
     ..
 
-cmake --build . --config %CONFIGURATION%
 cmake --build . --config %CONFIGURATION% --target package
 
 REM deploy:
