@@ -14,7 +14,7 @@ NOTE: Version 1.0.0 will be removed soon.  Uninstall this version before install
 https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/names/s2spice/versions/1.0.0/setup.zip
 
 V1.0.1 with new installer that does not reboot machine:
-https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/names/s2spice/versions/1.0.1/s2spice.zip
+https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/versions/1.0.1/s2spice.zip
 
 ### Usage:
 
