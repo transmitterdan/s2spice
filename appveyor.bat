@@ -1,7 +1,6 @@
 :: Build and upload s2spice artifacts
-@echo on
-
 setlocal enabledelayedexpansion
+@echo off
 
 if "%CONFIGURATION%" == "" (set CONFIGURATION=Release)
 if "%APPVEYOR_BUILD_FOLDER%" == "" (set "APPVEYOR_BUILD_FOLDER=%~dp0..")
@@ -26,6 +25,7 @@ cd %APPVEYOR_BUILD_FOLDER%
 if exist build (rmdir /q /s build)
 mkdir build && cd build
 
+@echo "Configuring:"
 cmake -T v143 ^
     -DCMAKE_GENERATOR_PLATFORM=Win32 ^
     -A Win32 -G "Visual Studio 17 2022" ^
@@ -38,8 +38,9 @@ cmake -T v143 ^
 
 call %APPVEYOR_BUILD_FOLDER%\version.bat
 
+@echo "Building:"
 cmake --build . --config %CONFIGURATION% --target package
 
-REM deploy:
+@echo "Deploy:"
 7z a -tzip s2spice.zip *.exe
 cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip -k "%CLOUDSMITH_API_KEY%" --version "%VERSION_STRING%" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"

@@ -1,3 +1,4 @@
+@echo off
 ::
 :: Install build dependencies. Requires a working choco installation,
 :: see https://docs.chocolatey.org/en-us/choco/setup.

@@ -6,7 +6,9 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VER_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VER_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VER_PATCH})
 set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL BOOL:ON)
-set(CPACK_NSIS_MODIFY_PATH BOOL::ON)
+# Now that we package our own C runtime libraries it's bad practice
+# to add this program to the PATH environment
+set(CPACK_NSIS_MODIFY_PATH BOOL::OFF)
 
 # if you have an icon set the path here 
 SET(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}\\\\${PACKAGE_NAME}.ico")

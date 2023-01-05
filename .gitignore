@@ -3,6 +3,7 @@ wxWidgets-3.2.1
 .vscode
 .vs
 version.h
+version.bat
 Test/*.lib
 Test/*.asy
 Test/*.log
