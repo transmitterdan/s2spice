@@ -22,7 +22,6 @@ if errorlevel 1 (
 
 cd %APPVEYOR_BUILD_FOLDER%
 
-call %APPVEYOR_BUILD_FOLDER%\version.bat
 
 if exist build (rmdir /q /s build)
 mkdir build && cd build
@@ -36,6 +35,8 @@ cmake -T v143 ^
     -DCMAKE_BUILD_TYPE=%CONFIGURATION% ^
     -DOCPN_CI_BUILD=ON ^
     ..
+
+call %APPVEYOR_BUILD_FOLDER%\version.bat
 
 cmake --build . --config %CONFIGURATION% --target package
 
