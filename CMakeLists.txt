@@ -43,13 +43,6 @@ file(APPEND "${CMAKE_SOURCE_DIR}/version.h"
 file(APPEND "${CMAKE_SOURCE_DIR}/version.h"
   "#endif\n")
 
-file(WRITE "${CMAKE_SOURCE_DIR}/version.bat"
-  "REM version.bat\n")
-file(APPEND "${CMAKE_SOURCE_DIR}/version.bat"
-  "set \"VERSION_STRING=${PROJECT_VER}\"\n")
-file(APPEND "${CMAKE_SOURCE_DIR}/version.bat"
-  "exit /b 0\n")
-
 if (MSVC)
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})

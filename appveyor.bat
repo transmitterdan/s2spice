@@ -22,8 +22,6 @@ if errorlevel 1 (
 
 cd %APPVEYOR_BUILD_FOLDER%
 
-call %APPVEYOR_BUILD_FOLDER%\version.bat
-
 if exist build (rmdir /q /s build)
 mkdir build && cd build
 
@@ -41,4 +39,4 @@ cmake --build . --config %CONFIGURATION% --target package
 
 REM deploy:
 7z a -tzip s2spice.zip *.exe
-cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip -k "%CLOUDSMITH_API_KEY%" --version "%VERSION_STRING%" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"
+cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip -k "%CLOUDSMITH_API_KEY%" --version "1.0.1" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"
