@@ -10,8 +10,8 @@ Another feature is the ability to create LTspice symbol (.ASY) files making it e
 
 ## Binary installation for Windows
 
-V1.0.1 with new installer that does not reboot machine:
-https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/versions/1.0.1/s2spice.zip
+V1.0.2 with new installer that does not reboot machine:
+https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/versions/1.0.2/s2spice.zip
 
 ### Usage:
 
