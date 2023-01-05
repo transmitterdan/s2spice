@@ -32,6 +32,17 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+file(WRITE "${CMAKE_SOURCE_DIR}/version.h"
+  "// version.h\n")
+file(APPEND "${CMAKE_SOURCE_DIR}/version.h"
+  "#if !defined(__VERSION__S2SPICE__)\n")
+file(APPEND "${CMAKE_SOURCE_DIR}/version.h"
+  "#define __VERSION__S2SPICE__\n")
+file(APPEND "${CMAKE_SOURCE_DIR}/version.h"
+  "const string versionString(\"${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}.${PROJECT_VER_PATCH}\");\n")
+file(APPEND "${CMAKE_SOURCE_DIR}/version.h"
+  "#endif\n")
+
 if (MSVC)
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})

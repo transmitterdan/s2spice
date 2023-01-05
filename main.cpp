@@ -75,6 +75,8 @@ using namespace std;
 
 #include "xqsmatrix.h"
 
+#include "version.h"
+
 // This is the main class for the program
 class MyApp : public wxApp {
 public:
@@ -401,7 +403,7 @@ void MyFrame::OnAbout(wxCommandEvent& event) {
   wxVersionInfo info;
   wxMessageBox(
       wxString::Format(
-          _("s2spice  Copyright (C) <2023>  Dan Dickey\n"
+          _("s2spice - V%s Copyright (C) <2023>  Dan Dickey\n"
             "This program comes with ABSOLUTELY NO WARRANTY.\n"
             "This is free software, and you are welcome to redistribute it\n"
             "under certain conditions.\n\n"
@@ -410,6 +412,6 @@ void MyFrame::OnAbout(wxCommandEvent& event) {
             "and save library (LIB) and symbol (ASY) files.\n"
             "wxWidgets version: %s\n"
             "Running on: %s\n"),
-          info.GetVersionString(), wxGetOsDescription()),
+          versionString, wxVERSION_STRING, wxGetOsDescription()),
       _("About S2spice"), wxOK | wxICON_INFORMATION, this);
 }
