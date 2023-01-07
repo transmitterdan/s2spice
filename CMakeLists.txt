@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.22)
 
 # REM On Windows use this to invoke cmake
 # cd build
@@ -99,7 +99,6 @@ if (WIN32)
   endif (MSVC)
 else (WIN32)
   add_executable (${PACKAGE_NAME} main.cpp)
-  install(TARGETS ${PACKAGE_NAME} RUNTIME DESTINATION bin)
 endif (WIN32)
 
 add_library(SObject STATIC 
