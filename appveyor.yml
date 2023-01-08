@@ -3,6 +3,9 @@ clone_folder: c:\project\s2spice
 shallow_clone: false
 clone_depth: 10
 
+environment:
+  CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+
 image:
   - Visual Studio 2022
 
