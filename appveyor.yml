@@ -19,7 +19,3 @@ init:
 
 build_script:
   - call .\appveyor.bat
-
-deploy:
-  - 7z a -tzip s2spice.zip *.exe
-  - cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip -k "%CLOUDSMITH_API_KEY%" --version "%VERSION_STRING%" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"
