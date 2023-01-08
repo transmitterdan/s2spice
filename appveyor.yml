@@ -11,10 +11,15 @@ platform:
 
 configuration: RelWithDebInfo
 
-install:
+init:
+  - git config --global core.autocrlf input
+  - choco install 7zip.install
   - set "VS_BASE=C:\Program Files\Microsoft Visual Studio\2022"
   - call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
-  - choco install 7zip.install
 
 build_script:
   - call .\appveyor.bat
+
+deploy:
+  - 7z a -tzip s2spice.zip *.exe
+  - cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip -k "%CLOUDSMITH_API_KEY%" --version "%VERSION_STRING%" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"
