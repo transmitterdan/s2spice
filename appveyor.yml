@@ -13,9 +13,12 @@ configuration: RelWithDebInfo
 
 init:
   - git config --global core.autocrlf input
-  - choco install 7zip.install
   - set "VS_BASE=C:\Program Files\Microsoft Visual Studio\2022"
   - call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
 
 build_script:
   - call .\appveyor.bat
+
+artifacts:
+  - path: '*.exe'
+    name: s2spice
