@@ -20,5 +20,5 @@ build_script:
   - call .\appveyor.bat
 
 artifacts:
-  - path: '*.exe'
+  - path: '.\build\*.exe'
     name: s2spice
