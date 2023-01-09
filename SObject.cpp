@@ -111,95 +111,97 @@ bool SObject::readSFile(wxFileName& SFile) {
     return false;
   }
 
-  wxFileInputStream input_stream(snp_file.GetFullPath());
-  if (!input_stream.IsOk()) {
-    wxString mess =
-        wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__, __LINE__,
-                         snp_file.GetFullPath());
-    // DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
-    if (be_quiet) {
-      cout << mess << endl;
+  {
+    wxFileInputStream input_stream(snp_file.GetFullPath());
+    if (!input_stream.IsOk()) {
+      wxString mess =
+          wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__,
+                           __LINE__, snp_file.GetFullPath());
+      // DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+      if (be_quiet) {
+        cout << mess << endl;
+      } else {
+        wxLogError(mess);
+      }
+      return false;
+    }
+    // the numbers in the extension tell us the number of ports
+    string ext(snp_file.GetExt().c_str());
+    string strPorts;
+    for (auto i : ext) {
+      if (isdigit(i)) strPorts += i;
+    }
+    numPorts = (strPorts.length() == 0) ? 0 : atoi(strPorts.c_str());
+    if (numPorts < 1) {
+      wxString mess =
+          wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+                           __FILE__, __LINE__, snp_file.GetFullPath());
+      if (be_quiet) {
+        cout << mess << endl;
+      } else {
+        wxLogError(mess);
+      }
+      return false;
+    }
+    wxTextInputStream text_input(input_stream);
+    wxString line;
+    comment_strings.Empty();
+    option_string.Clear();
+    data_strings.clear();
+    while (!text_input.GetInputStream().Eof()) {
+      line.Empty();
+      line = text_input.ReadLine();
+      line.Trim();
+      line.Trim(wxFalse);
+      if (line.StartsWith("!"))
+        comment_strings.push_back(line);
+      else if (line.StartsWith(";"))
+        comment_strings.push_back(line);
+      else if (line.StartsWith("*"))
+        comment_strings.push_back(line);
+      else if (line.StartsWith("#"))
+        option_string = line.MakeUpper();
+      else {
+        data_strings.append(line.ToStdString());
+        data_strings.append(" ");
+      }
+    }
+    if (option_string.IsEmpty()) {
+      format = "MA";  // default mag/angle
+      fUnits = 1e9;
+      parameter = "S";
+      Z0 = 50;
     } else {
-      wxLogError(mess);
-    }
-    return false;
-  }
-  // the numbers in the extension tell us the number of ports
-  string ext(snp_file.GetExt().c_str());
-  string strPorts;
-  for (auto i : ext) {
-    if (isdigit(i)) strPorts += i;
-  }
-  numPorts = (strPorts.length() == 0) ? 0 : atoi(strPorts.c_str());
-  if (numPorts < 1) {
-    wxString mess =
-        wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
-                         __FILE__, __LINE__, snp_file.GetFullPath());
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
-  }
-  wxTextInputStream text_input(input_stream);
-  wxString line;
-  comment_strings.Empty();
-  option_string.Clear();
-  data_strings.clear();
-  while (!text_input.GetInputStream().Eof()) {
-    line.Empty();
-    line = text_input.ReadLine();
-    line.Trim();
-    line.Trim(wxFalse);
-    if (line.StartsWith("!"))
-      comment_strings.push_back(line);
-    else if (line.StartsWith(";"))
-      comment_strings.push_back(line);
-    else if (line.StartsWith("*"))
-      comment_strings.push_back(line);
-    else if (line.StartsWith("#"))
-      option_string = line.MakeUpper();
-    else {
-      data_strings.append(line.ToStdString());
-      data_strings.append(" ");
-    }
-  }
-  if (option_string.IsEmpty()) {
-    format = "MA";  // default mag/angle
-    fUnits = 1e9;
-    parameter = "S";
-    Z0 = 50;
-  } else {
-    wxArrayString options(
-        wxStringTokenize(option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
-    for (size_t i = 0; i < options.GetCount(); i++) {
-      if (options[i].Matches("GHZ"))
-        fUnits = 1e9;
-      else if (options[i].Matches("MHZ"))
-        fUnits = 1e6;
-      else if (options[i].Matches("KHZ"))
-        fUnits = 1e3;
-      else if (options[i].Matches("HZ"))
-        fUnits = 1;
-      else if (options[i].Matches("S"))
-        parameter = options[i];
-      else if (options[i].Matches("Y"))
-        parameter = options[i];
-      else if (options[i].Matches("Z"))
-        parameter = options[i];
-      else if (options[i].Matches("H"))
-        parameter = options[i];
-      else if (options[i].Matches("G"))
-        parameter = options[i];
-      else if (options[i].Matches("DB"))
-        format = options[i];
-      else if (options[i].Matches("MA"))
-        format = options[i];
-      else if (options[i].Matches("RI"))
-        format = options[i];
-      else if (options[i].Matches("R"))
-        options[i + 1].ToDouble(&Z0);
+      wxArrayString options(wxStringTokenize(
+          option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
+      for (size_t i = 0; i < options.GetCount(); i++) {
+        if (options[i].Matches("GHZ"))
+          fUnits = 1e9;
+        else if (options[i].Matches("MHZ"))
+          fUnits = 1e6;
+        else if (options[i].Matches("KHZ"))
+          fUnits = 1e3;
+        else if (options[i].Matches("HZ"))
+          fUnits = 1;
+        else if (options[i].Matches("S"))
+          parameter = options[i];
+        else if (options[i].Matches("Y"))
+          parameter = options[i];
+        else if (options[i].Matches("Z"))
+          parameter = options[i];
+        else if (options[i].Matches("H"))
+          parameter = options[i];
+        else if (options[i].Matches("G"))
+          parameter = options[i];
+        else if (options[i].Matches("DB"))
+          format = options[i];
+        else if (options[i].Matches("MA"))
+          format = options[i];
+        else if (options[i].Matches("RI"))
+          format = options[i];
+        else if (options[i].Matches("R"))
+          options[i + 1].ToDouble(&Z0);
+      }
     }
   }
   if (!Convert2S()) {
@@ -362,25 +364,62 @@ bool SObject::WriteASY() {
 
 bool SObject::Convert2S() {
   Sparam S(numPorts);
+  vector<double> raw_data;
   // Since we know the number of ports we can know the amount
   // of data that should be in the data section.  So we tokenize
   // the numbers and then make sure we get exactly the right #.
-  istringstream iss(data_strings);
-  vector<string> tokens{istream_iterator<string>{iss},
-                        istream_iterator<string>{}};
-  data_strings.clear();
-  int nFreqs = tokens.size() / (numPorts * numPorts * 2 + 1);
-  if (nFreqs * (numPorts * numPorts * 2 + 1) != tokens.size()) return false;
+  {
+    int warning = 0;
+    istringstream iss(data_strings);
+    vector<string> tokens{istream_iterator<string>{iss},
+                          istream_iterator<string>{}};
+    data_strings.clear();
+    auto j = tokens.begin();
+    do {
+      try {
+        raw_data.push_back(stod(*j));
+      } catch (std::invalid_argument const& ex) {
+        warning++;
+      }
+    } while (++j != tokens.end());
+    if (warning > 0) {
+      wxString mess = wxString::Format(
+          "%s:%d WARNING: %s contains invalid numeric characters", __FILE__,
+          __LINE__, snp_file.GetFullPath());
+      if (be_quiet) {
+        cout << mess << endl;
+      } else {
+        wxLogWarning(mess);
+      }
+    }
+  }
+  int nFreqs = raw_data.size() / (numPorts * numPorts * 2 + 1);
+  if (nFreqs * (numPorts * numPorts * 2 + 1) != raw_data.size()) return false;
 
-  auto i = tokens.begin();
-  while (i != tokens.end()) {
-    S.Freq = fUnits * atof(i++->c_str());
+  double prevFreq = 0;
+  auto i = raw_data.begin();
+  while (i != raw_data.end()) {
+    S.Freq = fUnits * *i++;
+    // frequencies must be monotonically increasing
+    if (S.Freq < prevFreq) {
+      wxString mess = wxString::Format(
+          "%s:%d ERROR: %s contains decreasing frequency values", __FILE__,
+          __LINE__, snp_file.GetFullPath());
+      if (be_quiet) {
+        cout << mess << endl;
+      } else {
+        wxLogError(mess);
+      }
+      return false;
+    }
+    prevFreq = S.Freq;
+
     if (format == "MA") {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double mag, angle;
-          mag = stod(*i++);
-          angle = stod(*i++);
+          mag = *i++;
+          angle = *i++;
           S.dB(j, k) = 20.0 * log10(mag);
           S.Phase(j, k) = angle;
         }
@@ -389,8 +428,8 @@ bool SObject::Convert2S() {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double dB, angle;
-          dB = stod(*i++);
-          angle = stod(*i++);
+          dB = *i++;
+          angle = *i++;
           S.dB(j, k) = dB;
           S.Phase(j, k) = angle;
         }
@@ -399,8 +438,8 @@ bool SObject::Convert2S() {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double re, im;
-          re = stod(*i++);
-          im = stod(*i++);
+          re = *i++;
+          im = *i++;
           S.dB(j, k) = 20 * log10(sqrt(re * re + im * im));
           S.Phase(j, k) = atan2(im, re);
         }
@@ -422,7 +461,6 @@ bool SObject::Convert2S() {
     }
     SData.push_back(S);
   }
-  tokens.clear();
   return true;
 }
 
