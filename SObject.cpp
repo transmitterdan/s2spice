@@ -441,7 +441,7 @@ bool SObject::Convert2S() {
           re = *i++;
           im = *i++;
           S.dB(j, k) = 20 * log10(sqrt(re * re + im * im));
-          S.Phase(j, k) = atan2(im, re);
+          S.Phase(j, k) = atan2(im, re) * 180 / M_PI;
         }
       }
     } else {
