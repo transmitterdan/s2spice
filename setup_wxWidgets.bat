@@ -39,7 +39,7 @@ REM * debug version.  The debug version has better error messages if an error *
 REM * should happen.                                                          *
 REM ***************************************************************************
 if exist .\build rmdir /s /q .\build
-mkdir build && cd build && cmake -A wIN32 .. && cmake --build . --config Release --target package && cmake --build . --config Debug
+mkdir build && cd build && cmake -A Win32 .. && cmake --build . --config Release --target package && cmake --build . --config Debug
 if %errorlevel% == 0 goto :ok
 @echo Error during build proces
 exit /b 1
