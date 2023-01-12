@@ -74,10 +74,11 @@ if (WIN32)
   if (MSVC)
     add_executable (${PACKAGE_NAME} WIN32 main.cpp ${PACKAGE_NAME}.rc)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
+    set_target_properties(${PACKAGE_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "path=$(path);${wxWidgets_LIB_DIR}")
     install(TARGETS ${PACKAGE_NAME} RUNTIME
       DESTINATION bin COMPONENT binaries)
-    install(FILES ${CMAKE_SOURCE_DIR}/wxWidgets-3.2.1/lib/vc14x_dll/wxbase32u_vc14x.dll;
-                  ${CMAKE_SOURCE_DIR}/wxWidgets-3.2.1/lib/vc14x_dll/wxmsw32u_core_vc14x.dll
+    install(FILES ${wxWidgets_LIB_DIR}/wxbase32u_vc14x.dll;
+                  ${wxWidgets_LIB_DIR}/wxmsw32u_core_vc14x.dll
                   ${CMAKE_SOURCE_DIR}/win_dep/MSVCP140.dll
                   ${CMAKE_SOURCE_DIR}/win_dep/VCRUNTIME140.dll
                   ${CMAKE_SOURCE_DIR}/win_dep/api-ms-win-crt-heap-l1-1-0.dll
