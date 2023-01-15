@@ -82,6 +82,8 @@ public:
   wxFileName getLIBfile() { return lib_file; }
   bool WriteASY();
   bool WriteLIB();
+  // Return the complex value using original source format
+  void ConvertToInput(double& A, double& B);
   bool SetQuiet(bool flag) {
     bool res = be_quiet;
     be_quiet = flag;
@@ -109,7 +111,7 @@ private:
   wxFileName lib_file;
   double fUnits;           // frequency units
   double Z0;               // reference Z
-  wxString format;         // data format (DB, MA or RI)
+  wxString SpiceFormat;         // data format (DB, MA or RI)
   wxString parameterType;      // type of parameter (S is the only allowed type)
   wxString option_string;  // meta data strings
   // This function reads the contents of the file into a vector of points
