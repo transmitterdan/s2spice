@@ -106,7 +106,7 @@ if (WIN32)
       DESTINATION Test COMPONENT data_files)
   endif (MSVC)
 else (WIN32)
-  add_executable (${PACKAGE_NAME} ${SOURCES})
+  add_executable (${PACKAGE_NAME} ${MAIN_SRCS})
 endif (WIN32)
 
 add_library(SObject STATIC 
