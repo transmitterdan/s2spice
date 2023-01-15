@@ -79,7 +79,7 @@ set(LIB_DEPS
 # Add the source files
 if (WIN32)
   if (MSVC)
-    set(SRCS ${MAIN_SRCS} ${PACKAGE_NAME}.rc)
+    set(MAIN_SRCS ${MAIN_SRCS} ${PACKAGE_NAME}.rc)
     add_executable (${PACKAGE_NAME} WIN32 ${MAIN_SRCS} ${LIB_HDRS})
     set_target_properties(${PACKAGE_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "path=$(path);${wxWidgets_LIB_DIR}")
     install(TARGETS ${PACKAGE_NAME} RUNTIME
