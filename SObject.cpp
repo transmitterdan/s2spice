@@ -330,9 +330,6 @@ bool SObject::WriteLIB() {
           output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", sparam.Freq,
                                         dB, phs);
         }
-        prevph = phs;
-        output_stream << wxString::Format("+(%14eHz,%14e,%14e)\n", sparam.Freq,
-                                          dB, phs + offset);
       }
       output_stream << "\n";
     }
