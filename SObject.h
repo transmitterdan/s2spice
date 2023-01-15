@@ -38,6 +38,8 @@ using namespace std;
 #include <vector>
 #include <complex>
 #include <iomanip>
+#include <list>
+#include <string>
 
 #include "xqsmatrix.h"
 
@@ -113,10 +115,10 @@ private:
   // This function reads the contents of the file into a vector of points
   vector<pair<double, double>> ReadFile(const string& fileName);
 
-  // This function creates a string vector describing a LTspice symbol
-  vector<string> Symbol(const string& symname) const;
-  vector<string> Symbol1port(const string& symname) const;
-  vector<string> Symbol2port(const string& symname) const;
+  // This function creates a string list describing a LTspice symbol
+  list<string> Symbol(const string& symname) const;
+  list<string> Symbol1port(const string& symname) const;
+  list<string> Symbol2port(const string& symname) const;
 
   // Read in .snp file
   bool ReadSNP(const wxFileName& file);

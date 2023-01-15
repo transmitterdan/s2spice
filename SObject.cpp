@@ -330,47 +330,12 @@ bool SObject::WriteLIB() {
           output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", sparam.Freq,
                                         dB, phs);
         }
-        output_stream << "\n";
+        prevph = phs;
+        output_stream << wxString::Format("+(%14eHz,%14e,%14e)\n", sparam.Freq,
+                                          dB, phs + offset);
       }
+      output_stream << "\n";
     }
-  } else if (format.Matches("RI")) {
-    for (int i = 0; i < numPorts; i++) {
-      for (int j = 0; j < numPorts; j++) {
-        output_stream << stringFormat("* S%d%d FREQ R_I PHASE\n ", i + 1,
-                                      j + 1);
-        if (j + 1 == numPorts) {
-          output_stream << stringFormat(
-              "E%02d%02d %d %d FREQ {V(%d,%d)}= R_I\n", i + 1, j + 1,
-              npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
-              numPorts + 1);
-        } else {
-          output_stream << stringFormat(
-              "E%02d%02d %d %d FREQ {V(%d,%d)}= R_I\n", i + 1, j + 1,
-              npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
-              npMult * (j + 1), numPorts + 1);
-        }
-        for (auto& sparam : SData) {
-          double phs = sparam.Phase(i, j) * M_PI / 180;
-          double dB = sparam.dB(i, j);
-          double mag = pow(10.0, dB / 20.0);
-          double re = mag * cos(phs);
-          double im = mag * sin(phs);
-          output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", sparam.Freq,
-                                        re, im);
-        }
-        output_stream << "\n";
-      }
-    }
-  } else {
-    wxString mess = wxString::Format(_("Unknown format '%s'."), format);
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    output_stream.close();
-    data_saved = true;
-    return false;
   }
   output_stream << ".ENDS * " << lib_file.GetName() << "\n";
   output_stream.close();
@@ -402,7 +367,7 @@ bool SObject::WriteASY() {
     return false;
   }
 
-  vector<string> sym;
+  list<string> sym;
 
   sym = Symbol(asy_file.GetName().ToStdString());
 
@@ -537,8 +502,8 @@ bool SObject::Convert2S() {
   return true;
 }
 
-vector<string> SObject::Symbol2port(const string& symname) const {
-  vector<string> symbol;
+list<string> SObject::Symbol2port(const string& symname) const {
+  list<string> symbol;
   symbol.push_back("Version 4");
   symbol.push_back("SymbolType BLOCK");
   symbol.push_back("RECTANGLE Normal 48 -32 -48 32");
@@ -558,8 +523,8 @@ vector<string> SObject::Symbol2port(const string& symname) const {
   return symbol;
 }
 
-vector<string> SObject::Symbol1port(const string& symname) const {
-  vector<string> symbol;
+list<string> SObject::Symbol1port(const string& symname) const {
+  list<string> symbol;
   symbol.push_back("Version 4");
   symbol.push_back("SymbolType BLOCK");
   symbol.push_back("RECTANGLE Normal 48 -32 -48 32");
@@ -576,8 +541,8 @@ vector<string> SObject::Symbol1port(const string& symname) const {
   return symbol;
 }
 
-vector<string> SObject::Symbol(const string& symname) const {
-  vector<string> symbol;
+list<string> SObject::Symbol(const string& symname) const {
+  list<string> symbol;
   switch (numPorts) {
     case 1:
       symbol = Symbol1port(symname);
