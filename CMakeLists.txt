@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 
 # REM On Windows use this to invoke cmake
+# mkdir build
 # cd build
-# cmake -AWIN32 -G "Visual Studio 17 2022" ..
+# cmake -A Win32 ..
 # REM  build release and debug versions
 # cmake --build . --config Release && cmake --build . --config Debug
-
-# All platforms need the eigen template library
-# git clone https://github.com/libigl/eigen
 
 if (APPLE)
   set(PACKAGE_NAME S2spice)
@@ -20,15 +18,15 @@ project(${PACKAGE_NAME} LANGUAGES CXX)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # set the project version. 
-set(PROJECT_VER_PATCH 3)
-set(PROJECT_VER_MINOR 0)
+set(PROJECT_VER_PATCH 0)
+set(PROJECT_VER_MINOR 1)
 set(PROJECT_VER_MAJOR 1)
 
 set(PROJECT_VER "${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}.${PROJECT_VER_PATCH}")
 message(STATUS "Building version ${PROJECT_VER}")
 
-set(CMAKE_CXX_STANDARD 11)
-message(STATUS "Setting C++11 standard via cmake standard mechanism")
+set(CMAKE_CXX_STANDARD 17)
+message(STATUS "Setting C++17 standard via cmake standard mechanism")
 
 # guard against bad build-type strings
 
@@ -56,7 +54,7 @@ file(APPEND "${CMAKE_SOURCE_DIR}/version.bat"
 
 if (MSVC)
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
+    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
   endif (CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
 endif (MSVC)
 
@@ -69,11 +67,20 @@ SET(wxWidgets_USE_LIBS base core)
 find_package(wxWidgets REQUIRED)
 include(${wxWidgets_USE_FILE})
 
+set(MAIN_SRCS main.cpp)
+set(LIB_SRCS SObject.cpp)
+set(LIB_HDRS SObject.h)
+set(LIB_DEPS
+		${LIB_HDRS}
+		stringformat.hpp
+		xqsmatrix.h
+	)
+
 # Add the source files
 if (WIN32)
   if (MSVC)
-    add_executable (${PACKAGE_NAME} WIN32 main.cpp ${PACKAGE_NAME}.rc)
-    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PACKAGE_NAME})
+    set(SRCS ${MAIN_SRCS} ${PACKAGE_NAME}.rc)
+    add_executable (${PACKAGE_NAME} WIN32 ${MAIN_SRCS} ${LIB_HDRS})
     set_target_properties(${PACKAGE_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "path=$(path);${wxWidgets_LIB_DIR}")
     install(TARGETS ${PACKAGE_NAME} RUNTIME
       DESTINATION bin COMPONENT binaries)
@@ -99,13 +106,15 @@ if (WIN32)
       DESTINATION Test COMPONENT data_files)
   endif (MSVC)
 else (WIN32)
-  add_executable (${PACKAGE_NAME} main.cpp)
+  add_executable (${PACKAGE_NAME} ${SOURCES})
 endif (WIN32)
 
 add_library(SObject STATIC 
-    SObject.cpp
-    SObject.h
-    xqsmatrix.h)
+    ${LIB_SRCS}
+	${LIB_HDRS}
+	${LIB_DEPS}
+)
+
 
 # Link the executable to the wxWidgets library
 target_link_libraries(${PACKAGE_NAME} ${wxWidgets_LIBRARIES} SObject)

@@ -37,13 +37,55 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <utility>
 
 #include "SObject.h"
+#include "stringformat.hpp"
 
 using namespace std;
 
+/*
+The formula for converting H-parameters to S-parameters for an arbitrary number
+of ports is as follows:
+
+S = (Z0/Y0) * (I + H) * (I - H)^-1
+
+Where Z0 is the reference impedance, Y0 is the admittance of the reference
+plane, I is the identity matrix, and H is the matrix of H-parameters.
+
+It is important to note that this formula is only applicable to linear,
+time-invariant systems and that the number of ports must be known and consistent
+throughout the conversion.
+
+#include <iostream>
+#include <complex>
+#include <Eigen/Dense>
+
+using namespace std;
+using namespace Eigen;
+
+MatrixXcd h2s(const MatrixXcd& H, double Z0, double Y0) {
+    int n = H.rows(); // get the number of ports
+    // create the identity matrix
+    MatrixXcd I = MatrixXcd::Identity(n, n);
+    // calculate S-parameters
+    MatrixXcd S = (Z0/Y0) * (I + H) * (I - H).inverse();
+    return S;
+}
+
+int main() {
+    // example usage
+    MatrixXcd H(2,2);
+    H << complex<double>(1,2), complex<double>(-3,-4),
+         complex<double>(5,6), complex<double>(-7,-8);
+    double Z0 = 50; // ohms
+    double Y0 = 1/Z0;
+    MatrixXcd S = h2s(H, Z0, Y0);
+    cout << "S-parameters:" << endl << S << endl;
+    return 0;
+}
+
+*/
 Sparam::Sparam(std::size_t _n) {
   Freq = 0.0;
   dB.set_row_count(_n);
@@ -169,7 +211,7 @@ bool SObject::readSFile(wxFileName& SFile) {
     if (option_string.IsEmpty()) {
       format = "MA";  // default mag/angle
       fUnits = 1e9;
-      parameter = "S";
+      parameterType = "S";
       Z0 = 50;
     } else {
       wxArrayString options(wxStringTokenize(
@@ -184,15 +226,15 @@ bool SObject::readSFile(wxFileName& SFile) {
         else if (options[i].Matches("HZ"))
           fUnits = 1;
         else if (options[i].Matches("S"))
-          parameter = options[i];
+          parameterType = options[i];
         else if (options[i].Matches("Y"))
-          parameter = options[i];
+          parameterType = options[i];
         else if (options[i].Matches("Z"))
-          parameter = options[i];
+          parameterType = options[i];
         else if (options[i].Matches("H"))
-          parameter = options[i];
+          parameterType = options[i];
         else if (options[i].Matches("G"))
-          parameter = options[i];
+          parameterType = options[i];
         else if (options[i].Matches("DB"))
           format = options[i];
         else if (options[i].Matches("MA"))
@@ -260,44 +302,75 @@ bool SObject::WriteLIB() {
   /* define resistances for Spice model */
 
   for (int i = 0; i < numPorts; i++) {
-    output_stream << (wxString::Format("R%dN %d %d %e\n", i + 1, i + 1,
-                                       npMult * (i + 1), -Z0)
-                          .c_str());
-    output_stream << (wxString::Format("R%dP %d %d %e\n", i + 1,
-                                       npMult * (i + 1), npMult * (i + 1) + 1,
-                                       2 * Z0));
+    output_stream << stringFormat("R%dN %d %d %e\n", i + 1, i + 1,
+                                  npMult * (i + 1), -Z0);
+    output_stream << stringFormat("R%dP %d %d %e\n", i + 1, npMult * (i + 1),
+                                  npMult * (i + 1) + 1, 2 * Z0);
   }
 
   output_stream << "\n";
-  for (int i = 0; i < numPorts; i++) {
-    for (int j = 0; j < numPorts; j++) {
-      output_stream << wxString::Format("* S%d%d FREQ DB PHASE\n ", i + 1,
-                                        j + 1);
-      if (j + 1 == numPorts) {
-        output_stream << wxString::Format(
-            "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
-            npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
-            numPorts + 1);
-      } else {
-        output_stream << wxString::Format(
-            "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
-            npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
-            npMult * (j + 1), numPorts + 1);
-      }
-      double offset = 0;
-      double prevph = 0;
-      for (auto& sparam : SData) {
-        double phs = sparam.Phase(i, j);
-        double dB = sparam.dB(i, j);
-        if ((abs(phs - prevph)) > 180.0) {
-          offset = offset - 360.0 * (double)signbit(prevph - phs);
+  if (format.Matches("DB")) {
+    for (int i = 0; i < numPorts; i++) {
+      for (int j = 0; j < numPorts; j++) {
+        output_stream << stringFormat("* S%d%d FREQ DB PHASE\n ", i + 1, j + 1);
+        if (j + 1 == numPorts) {
+          output_stream << stringFormat(
+              "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
+              npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
+              numPorts + 1);
+        } else {
+          output_stream << stringFormat(
+              "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
+              npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
+              npMult * (j + 1), numPorts + 1);
         }
-        prevph = phs;
-        output_stream << wxString::Format("+(%14eHz,%14e,%14e)\n", sparam.Freq,
-                                          dB, phs + offset);
+        for (auto& sparam : SData) {
+          double phs = sparam.Phase(i, j);
+          double dB = sparam.dB(i, j);
+          output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", sparam.Freq,
+                                        dB, phs);
+        }
+        output_stream << "\n";
       }
-      output_stream << "\n";
     }
+  } else if (format.Matches("RI")) {
+    for (int i = 0; i < numPorts; i++) {
+      for (int j = 0; j < numPorts; j++) {
+        output_stream << stringFormat("* S%d%d FREQ R_I PHASE\n ", i + 1,
+                                      j + 1);
+        if (j + 1 == numPorts) {
+          output_stream << stringFormat(
+              "E%02d%02d %d %d FREQ {V(%d,%d)}= R_I\n", i + 1, j + 1,
+              npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
+              numPorts + 1);
+        } else {
+          output_stream << stringFormat(
+              "E%02d%02d %d %d FREQ {V(%d,%d)}= R_I\n", i + 1, j + 1,
+              npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
+              npMult * (j + 1), numPorts + 1);
+        }
+        for (auto& sparam : SData) {
+          double phs = sparam.Phase(i, j) * M_PI / 180;
+          double dB = sparam.dB(i, j);
+          double mag = pow(10.0, dB / 20.0);
+          double re = mag * cos(phs);
+          double im = mag * sin(phs);
+          output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", sparam.Freq,
+                                        re, im);
+        }
+        output_stream << "\n";
+      }
+    }
+  } else {
+    wxString mess = wxString::Format(_("Unknown format '%s'."), format);
+    if (be_quiet) {
+      cout << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
+    output_stream.close();
+    data_saved = true;
+    return false;
   }
   output_stream << ".ENDS * " << lib_file.GetName() << "\n";
   output_stream.close();
@@ -403,7 +476,7 @@ bool SObject::Convert2S() {
     // frequencies must be monotonically increasing
     if (S.Freq < prevFreq) {
       wxString mess = wxString::Format(
-          "%s:%d ERROR: %s contains decreasing frequency values", __FILE__,
+          _("%s:%d ERROR: %s contains decreasing frequency values"), __FILE__,
           __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
@@ -446,7 +519,7 @@ bool SObject::Convert2S() {
       }
     } else {
       wxString mess =
-          wxString::Format(wxString::Format("%s:%d Cannot read file '%s'."),
+          wxString::Format(_("%s:%d Cannot read file '%s'."),
                            __FILE__, __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
