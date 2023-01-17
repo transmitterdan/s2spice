@@ -73,8 +73,6 @@ using namespace std;
 #include <utility>
 #include <assert.h>
 
-#include "xqsmatrix.h"
-
 #include "version.h"
 
 // This is the main class for the program

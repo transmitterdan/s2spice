@@ -104,6 +104,13 @@ SObject::SObject() {
 
 SObject::~SObject() { Clean(); }
 
+void SObject::Clean() {
+  SData.clear();
+  data_strings.clear();
+  comment_strings.clear();
+  data_saved = true;
+}
+
 bool SObject::openSFile(wxWindow* parent) {
 #if defined(_WIN32) || defined(_WIN64)
   char const* WildcardStr = "S paramter (*.snp)|*.S?P;S??P|All files (*.*)|*.*";
@@ -172,9 +179,10 @@ bool SObject::readSFile(wxFileName& SFile) {
     string strPorts;
     for (auto i : ext) {
       if (isdigit(i)) strPorts += i;
+      if ((strPorts.length() > 0) && !(isdigit(i))) break;
     }
-    numPorts = (strPorts.length() == 0) ? 0 : atoi(strPorts.c_str());
-    if (numPorts < 1) {
+    numPorts = stoi(strPorts);
+    if (numPorts < 1 || numPorts > 90) {
       wxString mess =
           wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
                            __FILE__, __LINE__, snp_file.GetFullPath());
@@ -208,43 +216,39 @@ bool SObject::readSFile(wxFileName& SFile) {
         data_strings.append(" ");
       }
     }
-    if (option_string.IsEmpty()) {
-      SpiceFormat = "MAG";  // default mag/angle
-      fUnits = 1e9;
-      parameterType = "S";
-      Z0 = 50;
-    } else {
-      wxArrayString options(wxStringTokenize(
-          option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
-      for (size_t i = 0; i < options.GetCount(); i++) {
-        options[i].MakeUpper();
-        if (options[i].Matches("GHZ"))
-          fUnits = 1e9;
-        else if (options[i].Matches("MHZ"))
-          fUnits = 1e6;
-        else if (options[i].Matches("KHZ"))
-          fUnits = 1e3;
-        else if (options[i].Matches("HZ"))
-          fUnits = 1;
-        else if (options[i].Matches("S"))
-          parameterType = options[i];
-        else if (options[i].Matches("Y"))
-          parameterType = options[i];
-        else if (options[i].Matches("Z"))
-          parameterType = options[i];
-        else if (options[i].Matches("H"))
-          parameterType = options[i];
-        else if (options[i].Matches("G"))
-          parameterType = options[i];
-        else if (options[i].StartsWith("DB"))
-          SpiceFormat = options[i];
-        else if (options[i].StartsWith("MA"))
-          SpiceFormat = "MAG";
-        else if (options[i].StartsWith("RI"))
-          SpiceFormat = "R_I";
-        else if (options[i].Matches("R"))
-          options[i + 1].ToDouble(&Z0);
-      }
+    SpiceFormat = "MAG";  // default mag/angle
+    fUnits = 1e9;
+    parameterType = "S";
+    Z0 = 50;
+    wxArrayString options(wxStringTokenize(
+        option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
+    for (size_t i = 0; i < options.GetCount(); i++) {
+      if (options[i].Matches("GHZ"))
+        fUnits = 1e9;
+      else if (options[i].Matches("MHZ"))
+        fUnits = 1e6;
+      else if (options[i].Matches("KHZ"))
+        fUnits = 1e3;
+      else if (options[i].Matches("HZ"))
+        fUnits = 1;
+      else if (options[i].Matches("S"))
+        parameterType = options[i].ToStdString();
+      else if (options[i].Matches("Y"))
+        parameterType = options[i].ToStdString();
+      else if (options[i].Matches("Z"))
+        parameterType = options[i].ToStdString();
+      else if (options[i].Matches("H"))
+        parameterType = options[i].ToStdString();
+      else if (options[i].Matches("G"))
+        parameterType = options[i].ToStdString();
+      else if (options[i].StartsWith("DB"))
+        SpiceFormat = "DB";
+      else if (options[i].StartsWith("MA"))
+        SpiceFormat = "MAG";
+      else if (options[i].StartsWith("RI"))
+        SpiceFormat = "R_I";
+      else if (options[i].Matches("R"))
+        options[i + 1].ToDouble(&Z0);
     }
   }
   if (!Convert2S()) {
@@ -268,16 +272,14 @@ bool SObject::writeLibFile(wxWindow* parent) {
 }
 
 void SObject::ConvertToInput(double& A, double& B) {
-  if (SpiceFormat.Matches("DB")) {
-    return;
-  } else if (SpiceFormat.Matches("R_I")) {
+  if (SpiceFormat.compare("R_I")==0) {
     double mag = pow(10.0,A/20.0);
-    double ph = atan2(B,A);
+    double ph = B * M_PI / 180.0;
     A = mag * cos(ph);
     B = mag * sin(ph);
-  } else if (SpiceFormat.Matches("MAG")) {
+  } else if (SpiceFormat.compare("MAG")==0) {
     double mag = pow(10.0,A/20.0);
-    double phase = atan2(B, A) * 180/M_PI;
+    double phase = B;
     A = mag;
     B = phase;
   } 
@@ -321,30 +323,30 @@ bool SObject::WriteLIB() {
   for (int i = 0; i < numPorts; i++) {
     output_stream << stringFormat("R%dN %d %d %e\n", i + 1, i + 1,
                                   npMult * (i + 1), -Z0);
-    output_stream << stringFormat("R%dP %d %d %e\n", i + 1, npMult * (i + 1),
+    output_stream << stringFormat("R%dP %d %d %f\n", i + 1, npMult * (i + 1),
                                   npMult * (i + 1) + 1, 2 * Z0);
   }
 
   output_stream << "\n";
   for (int i = 0; i < numPorts; i++) {
     for (int j = 0; j < numPorts; j++) {
-      output_stream << stringFormat("* S%d%d FREQ DB PHASE\n ", i + 1, j + 1);
+      output_stream << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1, SpiceFormat);
       if (j + 1 == numPorts) {
         output_stream << stringFormat(
-            "E%02d%02d %d %d FREQ {V(%d,%d)}= DB\n", i + 1, j + 1,
+            "E%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
             npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
-            numPorts + 1);
+            numPorts + 1, SpiceFormat);
       } else {
         output_stream << stringFormat(
             "E%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
             npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
             npMult * (j + 1), numPorts + 1, SpiceFormat);
       }
-      for (auto& sparam : SData) {
-        double b = sparam.Phase(i, j);
-        double a = sparam.dB(i, j);
-        ConvertToInput(a, b);
-        output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", sparam.Freq, a, b);
+      for (auto& s : SData) {
+        double A = s.dB(i, j);
+        double B = s.Phase(i, j);
+        ConvertToInput(A, B);
+        output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", s.Freq, A, B);
       }
     }
     output_stream << "\n";
@@ -469,23 +471,18 @@ bool SObject::Convert2S() {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double mag, angle;
-          mag = *i++;
-          angle = *i++;
-          S.dB(j, k) = 20.0 * log10(mag);
-          S.Phase(j, k) = angle;
+          S.dB(j, k) = 20.0 * log10(*i++);
+          S.Phase(j, k) = *i++;
         }
       }
     } else if (SpiceFormat == "DB") {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
-          double dB, angle;
-          dB = *i++;
-          angle = *i++;
-          S.dB(j, k) = dB;
-          S.Phase(j, k) = angle;
+          S.dB(j, k) = *i++;
+          S.Phase(j, k) = *i++;
         }
       }
-    } else if (SpiceFormat == "RI") {
+    } else if (SpiceFormat == "R_I") {
       for (auto j = 0; j < numPorts; j++) {
         for (auto k = 0; k < numPorts; k++) {
           double re, im;

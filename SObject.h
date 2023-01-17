@@ -61,29 +61,22 @@ class Sparam {
 public:
   Sparam() { Freq = 0.0; };
   Sparam(std::size_t n);
+
   double Freq;
-  XQSMatrix<double> dB;
-  XQSMatrix<double> Phase;
+  XQSMatrix<double> dB;     // dB is stored as 20*log10(magnitude)
+  XQSMatrix<double> Phase;  // Phase is stored as degrees
 };
 
 class SObject {
 public:
+  // Create-Destroy
   SObject();
   ~SObject();
+  
+  // Accessors
   int nPorts(void) { return numPorts; }
   int nFreq(void) { return SData.size(); }
   bool dataSaved(void) { return (SData.empty() || data_saved); }
-  bool openSFile(wxWindow* parent);
-  bool readSFile(wxFileName& fileName);
-  bool writeLibFile(wxWindow* parent);
-  bool writeSymFile(wxWindow* parent);
-  wxFileName getSNPfile() { return snp_file; }
-  wxFileName getASYfile() { return asy_file; }
-  wxFileName getLIBfile() { return lib_file; }
-  bool WriteASY();
-  bool WriteLIB();
-  // Return the complex value using original source format
-  void ConvertToInput(double& A, double& B);
   bool SetQuiet(bool flag) {
     bool res = be_quiet;
     be_quiet = flag;
@@ -96,6 +89,19 @@ public:
     return res;
   };
   bool GetForce() { return force; };
+  wxFileName getSNPfile() { return snp_file; }
+  wxFileName getASYfile() { return asy_file; }
+  wxFileName getLIBfile() { return lib_file; }
+  
+  // Data processors
+  bool openSFile(wxWindow* parent);
+  bool readSFile(wxFileName& fileName);
+  bool writeLibFile(wxWindow* parent);
+  bool writeSymFile(wxWindow* parent);
+  bool WriteASY();
+  bool WriteLIB();
+  
+  // Clean out the object and prep to import another
   void Clean();
 
 private:
@@ -111,28 +117,28 @@ private:
   wxFileName lib_file;
   double fUnits;           // frequency units
   double Z0;               // reference Z
-  wxString SpiceFormat;         // data format (DB, MA or RI)
-  wxString parameterType;      // type of parameter (S is the only allowed type)
+  string SpiceFormat;         // data format (DB, MA or RI)
+  string parameterType;      // type of parameter (S is the only allowed type)
   wxString option_string;  // meta data strings
   // This function reads the contents of the file into a vector of points
   vector<pair<double, double>> ReadFile(const string& fileName);
 
-  // This function creates a string list describing a LTspice symbol
+  // These functions create a string list describing a LTspice symbol
   list<string> Symbol(const string& symname) const;
   list<string> Symbol1port(const string& symname) const;
   list<string> Symbol2port(const string& symname) const;
 
   // Read in .snp file
   bool ReadSNP(const wxFileName& file);
+
   // Convert text to S-parameters
   bool Convert2S();
-};
 
-inline void SObject::Clean() {
-  SData.clear();
-  data_strings.clear();
-  comment_strings.clear();
-  data_saved = true;
-}
+  // Convert the saved value back to original source format type
+  // The data is always stored internally as dB/Phase_degrees
+  // So we use this to convert it back to the original S-parameter
+  // file data type
+  void ConvertToInput(double& A, double& B);
+};
 
 #endif
