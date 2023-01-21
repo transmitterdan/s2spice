@@ -30,7 +30,27 @@
 #pragma once
 #endif
 
+#if defined(__WINDOWS__)
+// Enable leak detection under windows
+// For Linux use valgrind or other leak detection tool
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
+#if  defined(NDEBUG)
+#define DBG_NEW new
+#else
+#define DBG_NEW new (_NORMAL_BLOCK, __FILE__, __LINE__)
+// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
+// allocations to be of _CLIENT_BLOCK type
+#endif
+#endif
+
 #include <wx/wx.h>
+#include <wx/wfstream.h>
+#include <wx/txtstrm.h>
+#include <wx/filename.h>
+#include <wx/tokenzr.h>
 
 // std libraries we use
 #include <vector>
@@ -59,25 +79,30 @@ using namespace Eigen;
 
 class Sparam {
 public:
-  Sparam(size_t n);
+  Sparam(size_t _n = 2) {
+    Freq = 0;
+    dB = ArrayXXd::Zero(_n, _n);
+    Phase = ArrayXXd::Zero(_n, _n);
+  }
 
   MatrixXd phaseRad() const { return (Phase * M_PI / 180.0); }
   MatrixXd phaseDeg() const { return (Phase); }
   MatrixXd mag() const {
-    auto x = (dB / 20);
-    return exp(log(10) * x.array());
+    MatrixXd x = (dB / 20);
+    MatrixXd res = pow(10, x.array());
+    return res;
   }
-  MatrixXcd cplx() const {
-    auto m = mag().array();
-    auto p = phaseRad().array();
+  MatrixXcd Scplx() const {
+    auto m = mag();
+    auto p = phaseRad();
     MatrixXcd res(dB.rows(), dB.cols());
-    res.real() = m * cos(p);
-    res.imag() = m * sin(p);
+    res.real() = m.array() * cos(p.array());
+    res.imag() = m.array() * sin(p.array());
     return res;
   }
   void cplxStore(const MatrixXcd& cp) {
-    dB = 20.0 * log10(cp.array().abs());
-    Phase = cp.array().arg() * 180.0 / M_PI;
+    dB = 20.0 * log10(cp.cwiseAbs().array());
+    Phase = (180.0 / M_PI) * cp.cwiseArg();
   }
   double Freq;     // Freq is stored as Hz
   MatrixXd dB;     // dB is stored as 20*log10(magnitude)

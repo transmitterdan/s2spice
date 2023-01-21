@@ -86,12 +86,6 @@ int main() {
 
 */
 
-Sparam::Sparam(size_t _n) {
-  Freq = 0;
-  dB = ArrayXXd::Zero(_n, _n);
-  Phase = ArrayXXd::Zero(_n, _n);
-}
-
 SObject::SObject() {
   Clean();
   numPorts = 0;
@@ -503,26 +497,32 @@ bool SObject::Convert2S() {
     }
     prevFreq = S.Freq;
 
-    // Step 1: Convert data from input specified type to internal storage type
-    // (dB/phase)
+    // Step 1: Convert data from input specified type to internal dB/phase deg
     if (inputFormat.compare("MAG") == 0) {
       for (size_t i = 0; i < numPorts; i++) {
         for (size_t j = 0; j < numPorts; j++) {
+          // convert raw mag to dB
           S.dB(i, j) = (20.0 * log10(*rd++));
+          // copy the phase in degrees
           S.Phase(i, j) = *rd++;
         }
       }
     } else if (inputFormat.compare("R_I") == 0) {
+      // Move data into complex matrix ri
+      MatrixXcd ri(numPorts, numPorts);
       for (size_t i = 0; i < numPorts; i++) {
         for (size_t j = 0; j < numPorts; j++) {
           double a = *rd++;
-          dcomplex ri(a, *rd++);
-          S.dB(i, j) =
-              20.0 * log10(abs(ri));  // FIXME: Debug to be sure this works
-          S.Phase(i, j) = arg(ri) * 180.0 / M_PI;
+          double b = *rd++;
+          ri(i, j) = dcomplex(a, b);
         }
       }
+      // Extract dB from matrix ri
+      S.dB = 20.0 * log10(abs(ri.array()));
+      // Extract phase in degrees from ri
+      S.Phase = (180 * M_PI ) * ri.cwiseArg();
     } else if (inputFormat.compare("DB") == 0) {
+      // input == internal form so just copy each value
       for (size_t i = 0; i < numPorts; i++) {
         for (size_t j = 0; j < numPorts; j++) {
           S.dB(i, j) = *rd++;
@@ -531,8 +531,8 @@ bool SObject::Convert2S() {
       }
     } else {
       wxString mess =
-          wxString::Format(_("%s:%d Cannot read file '%s'."), __FILE__,
-                           __LINE__, snp_file.GetFullPath());
+          wxString::Format(_("%s:%d Data format '%s' unsporrted in file '%s'."), __FILE__,
+                           __LINE__, wxString(inputFormat), snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
       } else {
@@ -543,12 +543,14 @@ bool SObject::Convert2S() {
 
     // Step 2: Convert from input parameter type H to S
     if (parameterType.compare("H") == 0) {
-      auto H = S.cplx();
+      auto H = S.Scplx();
       // convert H to S-parameters
       MatrixXcd Slocal = h2s(H, Z0, 1 / Z0);
       S.cplxStore(Slocal);
       parameterType = "S";
     }
+    // Step 3: Fixup 2-port data locations
+    //         Touchstone treats 2-ports uniquely
     if (numPorts == 2) {
       swap(S.dB(0, 1), S.dB(1, 0));
       swap(S.Phase(0, 1), S.Phase(1, 0));

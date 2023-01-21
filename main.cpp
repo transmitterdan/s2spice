@@ -25,34 +25,11 @@
  *
  ***************************************************************************/
 
-#if defined(__WINDOWS__)
-// Enable leak detection under windows
-// For Linux use valgrind or other leak detection tool
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
-
-#ifdef _DEBUG
-#define DBG_NEW new (_NORMAL_BLOCK, __FILE__, __LINE__)
-// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
-// allocations to be of _CLIENT_BLOCK type
-#else
-#define DBG_NEW new
-#endif
-
-#else
-#define DBG_NEW new
-#endif
-
 #include <wx/wxprec.h>
 #ifndef WX_PRECOMP
 #include <wx/wx.h>
 #endif /* WX_PRECOMP */
 #include <wx/app.h>
-#include <wx/wfstream.h>
-#include <wx/txtstrm.h>
-#include <wx/filename.h>
-#include <wx/tokenzr.h>
 #include <wx/cmdline.h>
 #include <wx/sizer.h>
 #include <wx/event.h>
