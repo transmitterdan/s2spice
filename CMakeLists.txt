@@ -110,7 +110,7 @@ endif (WIN32)
 
 SET( EIGEN3_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/eigen" )
 IF( NOT EIGEN3_INCLUDE_DIR )
-    MESSAGE( FATAL_ERROR "Perhaps you forgot to do "git submodule init && git submodule update" after the clone step.")
+    MESSAGE(FATAL_ERROR "Perhaps you forgot to do \"git submodule init && git submodule update\" after the clone step.")
 ENDIF()
 
 INCLUDE_DIRECTORIES ( "${EIGEN3_INCLUDE_DIR}" )
