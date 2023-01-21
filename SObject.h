@@ -44,6 +44,8 @@
 // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
 // allocations to be of _CLIENT_BLOCK type
 #endif
+#else
+#define DBG_NEW new
 #endif
 
 #include <wx/wx.h>
@@ -175,7 +177,7 @@ private:
   bool Convert2S();
 
   // Convert H to S-parameters
-  SObject::MatrixXcd h2s(const MatrixXcd& H, double Z0, double Y0) const;
+  MatrixXcd h2s(const MatrixXcd& H, double Z0, double Y0) const;
 
   // Convert the saved value back to original source format type
   // The data is always stored internally as dB/Phase_degrees
