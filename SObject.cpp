@@ -38,11 +38,10 @@
 #include <iostream>
 #include <fstream>
 #include <utility>
+#include <complex>
 
 #include "SObject.h"
 #include "stringformat.hpp"
-
-using namespace std;
 
 /*
 The formula for converting H-parameters to S-parameters for an arbitrary number
@@ -86,12 +85,11 @@ int main() {
 }
 
 */
-Sparam::Sparam(std::size_t _n) {
-  Freq = 0.0;
-  dB.set_row_count(_n);
-  dB.set_col_count(_n);
-  Phase.set_row_count(_n);
-  Phase.set_col_count(_n);
+
+Sparam::Sparam(size_t _n) {
+  Freq = 0;
+  dB = ArrayXXd::Zero(_n, _n);
+  Phase = ArrayXXd::Zero(_n, _n);
 }
 
 SObject::SObject() {
@@ -100,6 +98,7 @@ SObject::SObject() {
   fUnits = 0;
   Z0 = 50;
   be_quiet = false;
+  error = false;
 }
 
 SObject::~SObject() { Clean(); }
@@ -113,7 +112,7 @@ void SObject::Clean() {
 
 bool SObject::openSFile(wxWindow* parent) {
 #if defined(_WIN32) || defined(_WIN64)
-  char const* WildcardStr = "S paramter (*.snp)|*.S?P;S??P|All files (*.*)|*.*";
+  char const* WildcardStr = "S paramter (*.snp)|*.S?P;S??P|H paramter (*.hnp)|*.H?P;H??P|All files (*.*)|*.*";
 #else
   // On non-Windows platforms we try to find mostly snp files but
   // they don't all allow ? as a wildcard
@@ -216,7 +215,7 @@ bool SObject::readSFile(wxFileName& SFile) {
         data_strings.append(" ");
       }
     }
-    SpiceFormat = "MAG";  // default mag/angle
+    inputFormat = "MAG";  // default mag/angle
     fUnits = 1e9;
     parameterType = "S";
     Z0 = 50;
@@ -242,11 +241,11 @@ bool SObject::readSFile(wxFileName& SFile) {
       else if (options[i].Matches("G"))
         parameterType = options[i].ToStdString();
       else if (options[i].StartsWith("DB"))
-        SpiceFormat = "DB";
+        inputFormat = "DB";
       else if (options[i].StartsWith("MA"))
-        SpiceFormat = "MAG";
+        inputFormat = "MAG";
       else if (options[i].StartsWith("RI"))
-        SpiceFormat = "R_I";
+        inputFormat = "R_I";
       else if (options[i].Matches("R"))
         options[i + 1].ToDouble(&Z0);
     }
@@ -257,7 +256,7 @@ bool SObject::readSFile(wxFileName& SFile) {
     return false;
   }
   data_saved = false;
-  return true;
+  return !error;
 }
 
 bool SObject::writeLibFile(wxWindow* parent) {
@@ -271,23 +270,50 @@ bool SObject::writeLibFile(wxWindow* parent) {
   return WriteLIB();
 }
 
-void SObject::ConvertToInput(double& A, double& B) {
-  if (SpiceFormat.compare("R_I")==0) {
-    double mag = pow(10.0,A/20.0);
+// Convert the stored S-parameter data (dB/phase) format
+// into the original input file format so long as
+// LTspice supports that format. Otherwize, don't convert.
+void SObject::Convert2Input(double& A, double& B) {
+  if (inputFormat.compare("DB") == 0) {
+    return;
+  } else if (inputFormat.compare("R_I") == 0) {
+    double mag = pow(10.0, A / 20.0);
     double ph = B * M_PI / 180.0;
     A = mag * cos(ph);
     B = mag * sin(ph);
-  } else if (SpiceFormat.compare("MAG")==0) {
-    double mag = pow(10.0,A/20.0);
+  } else if (inputFormat.compare("MAG") == 0) {
+    double mag = pow(10.0, A / 20.0);
     double phase = B;
     A = mag;
     B = phase;
-  } 
+  } else {
+    wxString mess = wxString::Format(
+        _("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
+        __FILE__, __LINE__, wxString(parameterType));
+    if (be_quiet) {
+      cout << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
+    error = true;
+  }
 }
 
 bool SObject::WriteLIB() {
   string libName(lib_file.GetFullPath().ToStdString());
   int npMult = 100;
+  if (parameterType.compare("S") != 0) {
+    wxString mess =
+      wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
+                       __FILE__, __LINE__, wxString(parameterType));
+    if (be_quiet) {
+      cout << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
+    return false;
+  }
+	  
   ofstream output_stream(libName);
   if (!output_stream) {
     wxString mess =
@@ -330,23 +356,23 @@ bool SObject::WriteLIB() {
   output_stream << "\n";
   for (int i = 0; i < numPorts; i++) {
     for (int j = 0; j < numPorts; j++) {
-      output_stream << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1, SpiceFormat);
+      output_stream << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1, inputFormat);
       if (j + 1 == numPorts) {
         output_stream << stringFormat(
             "E%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
             npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
-            numPorts + 1, SpiceFormat);
+            numPorts + 1, inputFormat);
       } else {
         output_stream << stringFormat(
             "E%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
             npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
-            npMult * (j + 1), numPorts + 1, SpiceFormat);
+            npMult * (j + 1), numPorts + 1, inputFormat);
       }
-      for (auto& s : SData) {
-        double A = s.dB(i, j);
-        double B = s.Phase(i, j);
-        ConvertToInput(A, B);
-        output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", s.Freq, A, B);
+      for (auto s = SData.begin(); s != SData.end(); s++) {
+        double A = s->dB(i, j);
+        double B = s->Phase(i, j);
+        Convert2Input(A, B);
+        output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", s->Freq, A, B);
       }
     }
     output_stream << "\n";
@@ -355,7 +381,7 @@ bool SObject::WriteLIB() {
   output_stream << ".ENDS * " << lib_file.GetName() << "\n";
   output_stream.close();
   data_saved = true;
-  return true;
+  return !error;
 }
 
 bool SObject::writeSymFile(wxWindow* parent) {
@@ -412,11 +438,10 @@ bool SObject::WriteASY() {
   for (auto i = sym.begin(); i != sym.end(); i++) {
     output_stream << *i << "\n";
   }
-  return true;
+  return !error;
 }
 
 bool SObject::Convert2S() {
-  Sparam S(numPorts);
   vector<double> raw_data;
   // Since we know the number of ports we can know the amount
   // of data that should be in the data section.  So we tokenize
@@ -427,14 +452,13 @@ bool SObject::Convert2S() {
     vector<string> tokens{istream_iterator<string>{iss},
                           istream_iterator<string>{}};
     data_strings.clear();
-    auto j = tokens.begin();
-    do {
+    for (auto i = tokens.begin(); i != tokens.end(); i++) {
       try {
-        raw_data.push_back(stod(*j));
+        raw_data.push_back(stod(*i));
       } catch (std::invalid_argument const& ex) {
         warning++;
       }
-    } while (++j != tokens.end());
+    }
     if (warning > 0) {
       wxString mess = wxString::Format(
           "%s:%d WARNING: %s contains invalid numeric characters", __FILE__,
@@ -446,13 +470,25 @@ bool SObject::Convert2S() {
       }
     }
   }
-  int nFreqs = raw_data.size() / (numPorts * numPorts * 2 + 1);
-  if (nFreqs * (numPorts * numPorts * 2 + 1) != raw_data.size()) return false;
 
+  int nFreqs = raw_data.size() / (numPorts * numPorts * 2 + 1);
+  if (nFreqs * (numPorts * numPorts * 2 + 1) != raw_data.size()) {
+    wxString mess =
+        wxString::Format(_("%s:%d ERROR: %s contains wrong number of values"),
+                         __FILE__, __LINE__, snp_file.GetFullPath());
+    if (be_quiet) {
+      cout << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
+    return false;
+  }
+
+  Sparam S(numPorts);
   double prevFreq = 0;
-  auto i = raw_data.begin();
-  while (i != raw_data.end()) {
-    S.Freq = fUnits * *i++;
+  for (auto rd = raw_data.begin(); rd != raw_data.end();) {
+    size_t numPortsSqd = numPorts * numPorts;
+    S.Freq = fUnits * *rd++;
     // frequencies must be monotonically increasing
     if (S.Freq < prevFreq) {
       wxString mess = wxString::Format(
@@ -467,35 +503,36 @@ bool SObject::Convert2S() {
     }
     prevFreq = S.Freq;
 
-    if (SpiceFormat == "MA") {
-      for (auto j = 0; j < numPorts; j++) {
-        for (auto k = 0; k < numPorts; k++) {
-          double mag, angle;
-          S.dB(j, k) = 20.0 * log10(*i++);
-          S.Phase(j, k) = *i++;
+    // Step 1: Convert data from input specified type to internal storage type
+    // (dB/phase)
+    if (inputFormat.compare("MAG") == 0) {
+      for (size_t i = 0; i < numPorts; i++) {
+        for (size_t j = 0; j < numPorts; j++) {
+          S.dB(i, j) = (20.0 * log10(*rd++));
+          S.Phase(i, j) = *rd++;
         }
       }
-    } else if (SpiceFormat == "DB") {
-      for (auto j = 0; j < numPorts; j++) {
-        for (auto k = 0; k < numPorts; k++) {
-          S.dB(j, k) = *i++;
-          S.Phase(j, k) = *i++;
+    } else if (inputFormat.compare("R_I") == 0) {
+      for (size_t i = 0; i < numPorts; i++) {
+        for (size_t j = 0; j < numPorts; j++) {
+          double a = *rd++;
+          dcomplex ri(a, *rd++);
+          S.dB(i, j) =
+              20.0 * log10(abs(ri));  // FIXME: Debug to be sure this works
+          S.Phase(i, j) = arg(ri) * 180.0 / M_PI;
         }
       }
-    } else if (SpiceFormat == "R_I") {
-      for (auto j = 0; j < numPorts; j++) {
-        for (auto k = 0; k < numPorts; k++) {
-          double re, im;
-          re = *i++;
-          im = *i++;
-          S.dB(j, k) = 20 * log10(sqrt(re * re + im * im));
-          S.Phase(j, k) = atan2(im, re) * 180 / M_PI;
+    } else if (inputFormat.compare("DB") == 0) {
+      for (size_t i = 0; i < numPorts; i++) {
+        for (size_t j = 0; j < numPorts; j++) {
+          S.dB(i, j) = *rd++;
+          S.Phase(i, j) = *rd++;
         }
       }
     } else {
       wxString mess =
-          wxString::Format(_("%s:%d Cannot read file '%s'."),
-                           __FILE__, __LINE__, snp_file.GetFullPath());
+          wxString::Format(_("%s:%d Cannot read file '%s'."), __FILE__,
+                           __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
       } else {
@@ -503,13 +540,31 @@ bool SObject::Convert2S() {
       }
       return false;
     }
+
+    // Step 2: Convert from input parameter type H to S
+    if (parameterType.compare("H") == 0) {
+      auto H = S.cplx();
+      // convert H to S-parameters
+      MatrixXcd Slocal = h2s(H, Z0, 1 / Z0);
+      S.cplxStore(Slocal);
+      parameterType = "S";
+    }
     if (numPorts == 2) {
       swap(S.dB(0, 1), S.dB(1, 0));
       swap(S.Phase(0, 1), S.Phase(1, 0));
     }
     SData.push_back(S);
   }
-  return true;
+  return !error;
+}
+
+MatrixXcd SObject::h2s(const MatrixXcd& H, double Z0, double Y0) const {
+  int n = H.rows();  // get the number of ports
+  // create the identity matrix
+  MatrixXcd I(MatrixXcd::Identity(n, n));
+  // calculate S-parameters
+  MatrixXcd S = (Z0 / Y0) * (I + H) * (I - H).inverse();
+  return S;
 }
 
 list<string> SObject::Symbol2port(const string& symname) const {

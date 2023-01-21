@@ -67,13 +67,12 @@ SET(wxWidgets_USE_LIBS base core)
 find_package(wxWidgets REQUIRED)
 include(${wxWidgets_USE_FILE})
 
-set(MAIN_SRCS main.cpp)
-set(LIB_SRCS SObject.cpp)
-set(LIB_HDRS SObject.h)
-set(LIB_DEPS
+set(MAIN_SRCS ${CMAKE_SOURCE_DIR}/main.cpp)
+set(LIB_SRCS ${CMAKE_SOURCE_DIR}/SObject.cpp)
+set(LIB_HDRS ${CMAKE_SOURCE_DIR}/SObject.h)
+set(LIB_HDRS
 		${LIB_HDRS}
-		stringformat.hpp
-		xqsmatrix.h
+		${CMAKE_SOURCE_DIR}/stringformat.hpp
 	)
 
 # Add the source files
@@ -109,10 +108,16 @@ else (WIN32)
   add_executable (${PACKAGE_NAME} ${MAIN_SRCS})
 endif (WIN32)
 
+SET( EIGEN3_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/eigen" )
+IF( NOT EIGEN3_INCLUDE_DIR )
+    MESSAGE( FATAL_ERROR "Perhaps you forgot to do "git submodule init && git submodule update" after the clone step.")
+ENDIF()
+
+INCLUDE_DIRECTORIES ( "${EIGEN3_INCLUDE_DIR}" )
+
 add_library(SObject STATIC 
     ${LIB_SRCS}
 	${LIB_HDRS}
-	${LIB_DEPS}
 )
 
 

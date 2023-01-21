@@ -32,16 +32,16 @@
 
 #include <wx/wx.h>
 
-using namespace std;
-
 // std libraries we use
 #include <vector>
 #include <complex>
 #include <iomanip>
 #include <list>
 #include <string>
+#include <Eigen/Dense>
 
-#include "xqsmatrix.h"
+using namespace std;
+using namespace Eigen;
 
 #if !defined(NDEBUG)
 #if !defined(DEBUG_MESSAGE_BOX)
@@ -59,12 +59,29 @@ using namespace std;
 
 class Sparam {
 public:
-  Sparam() { Freq = 0.0; };
-  Sparam(std::size_t n);
+  Sparam(size_t n);
 
-  double Freq;
-  XQSMatrix<double> dB;     // dB is stored as 20*log10(magnitude)
-  XQSMatrix<double> Phase;  // Phase is stored as degrees
+  MatrixXd phaseRad() const { return (Phase * M_PI / 180.0); }
+  MatrixXd phaseDeg() const { return (Phase); }
+  MatrixXd mag() const {
+    auto x = (dB / 20);
+    return exp(log(10) * x.array());
+  }
+  MatrixXcd cplx() const {
+    auto m = mag().array();
+    auto p = phaseRad().array();
+    MatrixXcd res(dB.rows(), dB.cols());
+    res.real() = m * cos(p);
+    res.imag() = m * sin(p);
+    return res;
+  }
+  void cplxStore(const MatrixXcd& cp) {
+    dB = 20.0 * log10(cp.array().abs());
+    Phase = cp.array().arg() * 180.0 / M_PI;
+  }
+  double Freq;     // Freq is stored as Hz
+  MatrixXd dB;     // dB is stored as 20*log10(magnitude)
+  MatrixXd Phase;  // Phase is stored as degrees
 };
 
 class SObject {
@@ -111,13 +128,14 @@ private:
   bool data_saved;                // have we saved in imported S-parameter file
   bool be_quiet;
   bool force;           // force overwrite of files without complaining
+  bool error;
   int numPorts;         // number of ports in this file (comes from file name)
   wxFileName snp_file;  // file that is currently loaded
   wxFileName asy_file;
   wxFileName lib_file;
   double fUnits;           // frequency units
   double Z0;               // reference Z
-  string SpiceFormat;         // data format (DB, MA or RI)
+  string inputFormat;         // data format (DB, MA or RI)
   string parameterType;      // type of parameter (S is the only allowed type)
   wxString option_string;  // meta data strings
   // This function reads the contents of the file into a vector of points
@@ -128,17 +146,17 @@ private:
   list<string> Symbol1port(const string& symname) const;
   list<string> Symbol2port(const string& symname) const;
 
-  // Read in .snp file
-  bool ReadSNP(const wxFileName& file);
-
   // Convert text to S-parameters
   bool Convert2S();
+
+  // Convert H to S-parameters
+  SObject::MatrixXcd h2s(const MatrixXcd& H, double Z0, double Y0) const;
 
   // Convert the saved value back to original source format type
   // The data is always stored internally as dB/Phase_degrees
   // So we use this to convert it back to the original S-parameter
   // file data type
-  void ConvertToInput(double& A, double& B);
+  void Convert2Input(double& A, double& B);
 };
 
 #endif
