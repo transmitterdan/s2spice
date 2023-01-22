@@ -1,6 +1,6 @@
 ### S2SPICE README
 
-Version 1, 2023-JAN-2
+Version 2, 2023-JAN-23
 
 S2spice is a GUI utility program that reads S-Parameter files in Touchstone format. It can convert the data into a Spice .SUBCKT format and write it to a .LIB file. The .LIB file can be utilized by Spice simulators such as LTspice or PSpice to analyze the AC performance of the circuit described by the S-Parameters.  This is useful for analyzing systems with components that only have S-Parameter models.
 
@@ -10,8 +10,8 @@ Another feature is the ability to create LTspice symbol (.ASY) files making it e
 
 ## Binary installation for Windows
 
-V1.0.3 with new installer that does not reboot machine:
-https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/versions/1.0.3/s2spice.zip
+V2.0.0 with new installer that does not reboot machine:
+https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/versions/2.0.0/s2spice.zip
 
 It is also available here in GitHub Releases on this page.
 
@@ -29,7 +29,7 @@ A file open dialog will appear. Select from the dialog any S-Paramter file and p
 
 ## Make LIB
 
-Converts the S-parameter file to Spice .SUBCKT format and writes a file with same name as the S-Parameter file but with extension .lib (or .LIB in Windows).  The .SUBCKT name is the same as the S-paramter file name (without the extension).
+Converts the S-parameter file to Spice .SUBCKT format and writes a file with same name as the S-Parameter file but with extension .lib (or .LIB in Windows).  The .SUBCKT name is the same as the S-paramter file name (without the extension). The .lib file contains the same data format as the original .snp file. For example, if the .snp file contained real/imaginary (RI) format data then the .lib file will also be in R_I format.
 
 ## Make SYM
 
@@ -98,9 +98,9 @@ mkdir ~/myProjects
 cd ~/myProjects
 sudo apt update
 sudo apt install libwxbase3.0-dev  ; or whatever is latest version of wxWidgets
-git clone https://github.com/transmitterdan/s2spice
+git clone --recursive https://github.com/transmitterdan/s2spice.git
 cd s2spice
-git checkout main
+git checkout main --recurse-submodules
 mkdir build
 cd build
 cmake ..
@@ -118,8 +118,9 @@ Open a "x86 Native Tools Command Prompt for VS 2022" window and create a folder 
 ```
 c:
 cd \myProjects
-git clone https://github.com/transmitterdan/s2spice
-git checkout main
+git clone --recursive https://github.com/transmitterdan/s2spice.git
+cd s2spice
+git checkout main --recurse-submodules
 .\s2spice\setup_wxWidgets.bat
 ```
-If all goes well you should see the s2spice window open.  There are 2 executables created, one in the s2spice\build\Release folder, and the other in s2spice\build\Debug folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.  See setup_wxWidgets.bat for more details.
+If all goes well you should see the s2spice window open.  There are 2 executables created, one in the 's2spice\build\Release' folder, and the other in 's2spice\build\Debug' folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.  See setup_wxWidgets.bat for more details. Also, a Windows installer is created in the 's2spice\build' folder.
