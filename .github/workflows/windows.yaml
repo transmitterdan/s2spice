@@ -1,0 +1,53 @@
+---
+
+name: Windows
+
+'on':
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'Test/**'
+      - '*.md'
+  pull_request:
+    branches:
+      - main
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  CONFIGURATION: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows VS 2022
+            runner: windows-2022
+    env:
+      CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+
+    # Use bash as the shell, even under MSW where the default is PowerShell.
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      # required for CMake to find Ninja
+      - name: "Set up MSVC Developer Command Prompt"
+        uses: seanmiddleditch/gha-setup-vsdevenv@v3
+        with:
+          host_arch: x86
+          arch: win32
+
+      - name: "Dependencies, configure, build, deploy"
+        shell: cmd
+        run: .\appveyor.bat
+
