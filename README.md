@@ -121,6 +121,6 @@ cd \myProjects
 git clone --recursive https://github.com/transmitterdan/s2spice.git
 cd s2spice
 git checkout main --recurse-submodules
-.\s2spice\setup_wxWidgets.bat
+setup_wxWidgets.bat
 ```
-If all goes well you should see the s2spice window open.  There are 2 executables created, one in the 's2spice\build\Release' folder, and the other in 's2spice\build\Debug' folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.  See setup_wxWidgets.bat for more details. Also, a Windows installer is created in the 's2spice\build' folder.
+If all goes well with the build process you should see the s2spice window open.  There are 2 executables created, one in the 's2spice\build\Release' folder, and the other in 's2spice\build\Debug' folder.  The Debug version is slower but it will give more helpful messages if something goes wrong.  See setup_wxWidgets.bat for more details. Also, a Windows installer is created in the 's2spice\build' folder.
