@@ -4,6 +4,9 @@ REM cd myProjectsFolder
 REM git clone https:://github.com/transmitterdan/s2spice
 REM cd s2spice
 REM .\setup_wxWidgets.bat
+REM
+REM To bypass downloading the wxWidgets libraries do this:
+REM .\setup_wxWidgets.bat build
 
 set "wxVER=3.2.1"
 for /f "tokens=*" %%a in ('cd') do (
@@ -11,6 +14,7 @@ for /f "tokens=*" %%a in ('cd') do (
 )
 set "wxWIN=%VAR%\wxWidgets-%wxVER%"
 set "wxWidgets_ROOT_DIR=%wxWIN%"
+if "%1" == "build" goto :build
 if exist "%wxWIN%" (rmdir /s /q "%wxWIN%")
 curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Dev.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_Dev.7z"
 if not %errorlevel%==0 (exit /b 1)
@@ -27,6 +31,7 @@ if not %errorlevel%==0 (exit /b 1)
 7z x -o%WXWIN% "wxWidgets-headers.7z"
 if not %errorlevel%==0 (exit /b 1)
 del "wxWidgets-headers.7z"
+:build
 for /f "tokens=*" %%a in ('dir /b %wxWidgets_ROOT_DIR%\lib') do (
     set VAR=%%a
 )
