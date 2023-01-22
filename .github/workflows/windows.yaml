@@ -57,3 +57,4 @@ jobs:
           name: s2spice
           path: |
             .\build\s2spice*.exe
+          retention-days: 2
