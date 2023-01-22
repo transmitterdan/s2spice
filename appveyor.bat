@@ -33,7 +33,6 @@ cmake -T v143 ^
     -DwxWidgets_LIB_DIR=%wxWidgets_LIB_DIR% ^
     -DwxWidgets_CONFIGURATION=mswu ^
     -DCMAKE_BUILD_TYPE=%CONFIGURATION% ^
-    -DOCPN_CI_BUILD=ON ^
     ..
 
 call %APPVEYOR_BUILD_FOLDER%\version.bat
