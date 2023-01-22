@@ -19,6 +19,9 @@ init:
   - set "VS_BASE=C:\Program Files\Microsoft Visual Studio\2022"
   - call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
 
+install:
+  - git submodule update --init --recursive
+
 build_script:
   - call .\appveyor.bat
 
