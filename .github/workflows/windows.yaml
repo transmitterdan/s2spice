@@ -47,7 +47,13 @@ jobs:
           host_arch: x86
           arch: win32
 
-      - name: "Dependencies, configure, build, deploy"
+      - name: "Dependencies, configure, build"
         shell: cmd
         run: .\github_build.bat
 
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: s2spice
+          path: |
+            .\build\s2spice*.exe
