@@ -343,7 +343,7 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
   if (res) {
     wxString mess =
         wxString::Format(_("S2spice: Library file %s successfully created."),
-                         SData->getSNPfile().GetFullPath());
+                         SData->getLIBfile().GetFullPath());
     SetStatusText(mess);
     cout << mess << "\n";
   }

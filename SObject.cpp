@@ -39,6 +39,7 @@
 #include <fstream>
 #include <utility>
 #include <complex>
+#include <algorithm>
 
 #include "SObject.h"
 #include "stringformat.hpp"
@@ -134,7 +135,11 @@ bool SObject::readSFile(wxFileName& SFile) {
   snp_file = SFile;
   lib_file = SFile;
   asy_file = SFile;
+  string lib_name = SFile.GetName().ToStdString();
+  replace_if(lib_name.begin(), lib_name.end(), isspace, '_');
+  lib_file.SetName(lib_name);
   lib_file.SetExt("lib");
+  asy_file.SetName(lib_name);
   asy_file.SetExt("asy");
 #if !defined(NDEBUG)
   wxString cwd = wxGetCwd();
