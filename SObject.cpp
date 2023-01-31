@@ -460,7 +460,7 @@ bool SObject::Convert2S() {
     }
     if (warning > 0) {
       wxString mess = wxString::Format(
-          "%s:%d WARNING: %s contains invalid numeric characters", __FILE__,
+          "%s:%d WARNING: %s contains invalid non-numeric characters", __FILE__,
           __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
