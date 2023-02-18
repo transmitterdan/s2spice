@@ -40,6 +40,9 @@
 #include <utility>
 #include <complex>
 #include <algorithm>
+#include <cstdio>
+
+using namespace std;
 
 #include "SObject.h"
 #include "stringformat.hpp"
@@ -136,7 +139,7 @@ bool SObject::readSFile(wxFileName& SFile) {
   lib_file = SFile;
   asy_file = SFile;
   string lib_name = SFile.GetName().ToStdString();
-  replace_if(lib_name.begin(), lib_name.end(), isspace, '_');
+  replace_if(lib_name.begin(), lib_name.end(), ::isspace, '_');
   lib_file.SetName(lib_name);
   lib_file.SetExt("lib");
   asy_file.SetName(lib_name);
@@ -460,7 +463,7 @@ bool SObject::Convert2S() {
     }
     if (warning > 0) {
       wxString mess = wxString::Format(
-          "%s:%d WARNING: %s contains invalid numeric characters", __FILE__,
+          "%s:%d WARNING: %s contains invalid non-numeric characters", __FILE__,
           __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
@@ -557,8 +560,8 @@ bool SObject::Convert2S() {
     // Step 3: Fixup 2-port data locations
     //         Touchstone treats 2-ports uniquely
     if (numPorts == 2) {
-      swap(S.dB(0, 1), S.dB(1, 0));
-      swap(S.Phase(0, 1), S.Phase(1, 0));
+      std::swap(S.dB(0, 1), S.dB(1, 0));
+      std::swap(S.Phase(0, 1), S.Phase(1, 0));
     }
     SData.push_back(S);
   }
@@ -568,7 +571,7 @@ bool SObject::Convert2S() {
 MatrixXcd SObject::h2s(const MatrixXcd& H, double Z0, double Y0) const {
   int n = H.rows();  // get the number of ports
   // create the identity matrix
-  MatrixXcd I(MatrixXcd::Identity(n, n));
+  MatrixXcd I(H.Identity(n, n));
   // calculate S-parameters
   MatrixXcd S = (Z0 / Y0) * (I + H) * (I - H).inverse();
   return S;
