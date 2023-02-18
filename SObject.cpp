@@ -107,7 +107,7 @@ void SObject::Clean() {
 
 bool SObject::openSFile(wxWindow* parent) {
 #if defined(_WIN32) || defined(_WIN64)
-  char const* WildcardStr = "S paramter (*.snp)|*.S?P;S??P|H paramter (*.hnp)|*.H?P;H??P|All files (*.*)|*.*";
+  char const* WildcardStr = "S paramter (*.snp)|*.S?P;*.S??P|H paramter (*.hnp)|*.H?P;H??P|All files (*.*)|*.*";
 #else
   // On non-Windows platforms we try to find mostly snp files but
   // they don't all allow ? as a wildcard
@@ -633,6 +633,7 @@ list<string> SObject::Symbol(const string& symname) const {
           pinsRight.push_back(i + 1);
       }
       int symWidth = 96;
+      if (numPorts > 10) symWidth = 128;
       int symHeight = max(pinsLeft.size() * 32, pinsRight.size() * 32);
       int xur = symWidth / 2;
       int yur = -32;
