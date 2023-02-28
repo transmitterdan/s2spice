@@ -352,26 +352,20 @@ bool SObject::WriteLIB() {
     output_stream << stringFormat("R%dN %d %d %e\n", i + 1, i + 1,
                                   npMult * (i + 1), -Z0);
     output_stream << stringFormat("R%dP %d %d %f\n", i + 1, npMult * (i + 1),
-                                  npMult * (i + 1) + 1, 2 * Z0);
+                                  numPorts+1, 2 * Z0);
   }
 
   output_stream << "\n";
   for (int i = 0; i < numPorts; i++) {
     for (int j = 0; j < numPorts; j++) {
       output_stream << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1, inputFormat);
-      if (j + 1 == numPorts) {
-        output_stream << stringFormat(
-            "E%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
-            npMult * (i + 1) + j + 1, numPorts + 1, npMult * (j + 1),
-            numPorts + 1, inputFormat);
-      } else {
-        output_stream << stringFormat(
-            "E%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
-            npMult * (i + 1) + j + 1, npMult * (i + 1) + j + 2,
-            npMult * (j + 1), numPorts + 1, inputFormat);
-      }
+      output_stream << stringFormat(
+          "G%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
+          numPorts+1, npMult * (i + 1),
+          npMult * (j + 1), numPorts + 1, inputFormat);
       for (auto s = SData.begin(); s != SData.end(); s++) {
         double A = s->dB(i, j);
+        A = A - 20 * log10(2*Z0);
         double B = s->Phase(i, j);
         Convert2Input(A, B);
         output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", s->Freq, A, B);
