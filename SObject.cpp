@@ -522,7 +522,7 @@ bool SObject::Convert2S() {
       // Extract dB from matrix ri
       S.dB = 20.0 * log10(abs(ri.array()));
       // Extract phase in degrees from ri
-      S.Phase = (180 * M_PI ) * ri.cwiseArg();
+      S.Phase = (180 / M_PI ) * ri.cwiseArg();
     } else if (inputFormat.compare("DB") == 0) {
       // input == internal form so just copy each value
       for (size_t i = 0; i < numPorts; i++) {
