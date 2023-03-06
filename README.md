@@ -11,7 +11,7 @@ Another feature is the ability to create LTspice symbol (.ASY) files making it e
 ## Binary installation for Windows
 
 V2.0.2 with new installer that does not reboot machine:
-https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/versions/2.0.2/s2spice.zip
+https://dl.cloudsmith.io/public/dan-dickey/s2spice/raw/versions/2.1.0/s2spice.zip
 
 It is also available here in GitHub Releases on this page.
 
