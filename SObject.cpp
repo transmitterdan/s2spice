@@ -152,7 +152,9 @@ bool SObject::readSFile(wxFileName& SFile) {
                                        "Current working directory: '%s'"),
                                      __FILE__, __LINE__, snp_file.GetFullPath(),
                                      wxGetCwd());
-    // DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+    #if 0
+      DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+    #endif
     if (be_quiet) {
       cout << mess << endl;
     } else {
@@ -167,7 +169,9 @@ bool SObject::readSFile(wxFileName& SFile) {
       wxString mess =
           wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__,
                            __LINE__, snp_file.GetFullPath());
-      // DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+      #if 0
+        DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
+      #endif
       if (be_quiet) {
         cout << mess << endl;
       } else {
@@ -176,7 +180,7 @@ bool SObject::readSFile(wxFileName& SFile) {
       return false;
     }
     // the numbers in the extension tell us the number of ports
-    string ext(snp_file.GetExt().c_str());
+    string ext = snp_file.GetExt().ToStdString();
     string strPorts;
     for (auto i : ext) {
       if (isdigit(i)) strPorts += i;
