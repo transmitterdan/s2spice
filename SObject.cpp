@@ -473,21 +473,23 @@ bool SObject::Convert2S() {
 
   int nFreqs = raw_data.size() / (numPorts * numPorts * 2 + 1);
   if (nFreqs * (numPorts * numPorts * 2 + 1) != raw_data.size()) {
+    // Maybe the file has an incomplete last frequency.  If not, it will reveal
+    // itself later on because frequency will be non-monotonic and then fail
     wxString mess =
-        wxString::Format(_("%s:%d ERROR: %s contains wrong number of values"),
+        wxString::Format(_("%s:%d WARNING: %s contains wrong number of values"),
                          __FILE__, __LINE__, snp_file.GetFullPath());
     if (be_quiet) {
       cout << mess << endl;
     } else {
-      wxLogError(mess);
+      wxLogWarning(mess);
     }
-    return false;
   }
 
   Sparam S(numPorts);
   double prevFreq = 0;
+  int nFrequencies = 0;
   for (auto rd = raw_data.begin(); rd != raw_data.end();) {
-    size_t numPortsSqd = numPorts * numPorts;
+    if (++nFrequencies > nFreqs) break;
     S.Freq = fUnits * *rd++;
     // frequencies must be monotonically increasing
     if (S.Freq < prevFreq) {
