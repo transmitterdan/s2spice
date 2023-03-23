@@ -364,14 +364,22 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
 
 void MyFrame::OnOpen(wxCommandEvent& event) {
   wxString mess;
-  if (SData->openSFile(this))
+  if (SData->openSFile(this)) {
     mess = wxString::Format(_("S2spice: Data successfully imported from %s."),
                             SData->getSNPfile().GetFullPath());
-  else
-    mess = wxString::Format(_("S2spice: Data import failed from %s!"),
+    SetStatusText(mess);
+    cout << mess << "\n";
+    mess = wxString::Format(
+        _("S2spice: First Frequency = %g, Last Frequency = %g."),
+        SData->fBegin(), SData->fEnd());
+    SetStatusText(mess);
+    cout << mess << "\n";
+  } else {
+    mess = wxString::Format(_("S2spice: Data import from %s failed!"),
                             SData->getSNPfile().GetFullPath());
-  SetStatusText(mess);
-  cout << mess << "\n";
+    SetStatusText(mess);
+    cout << mess << "\n";
+  }
 }
 
 void MyFrame::OnAbout(wxCommandEvent& event) {

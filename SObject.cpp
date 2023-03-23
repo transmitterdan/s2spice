@@ -539,7 +539,7 @@ bool SObject::Convert2S() {
       }
     } else {
       wxString mess =
-          wxString::Format(_("%s:%d Data format '%s' unsporrted in file '%s'."), __FILE__,
+          wxString::Format(_("%s:%d Data format '%s' unsupported in file '%s'."), __FILE__,
                            __LINE__, wxString(inputFormat), snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;

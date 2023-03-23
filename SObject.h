@@ -120,6 +120,8 @@ public:
   // Accessors
   int nPorts(void) { return numPorts; }
   int nFreq(void) { return SData.size(); }
+  double fBegin(void) { return SData.begin()->Freq; }
+  double fEnd(void) { return (SData.end()-1)->Freq; }
   bool dataSaved(void) { return (SData.empty() || data_saved); }
   bool SetQuiet(bool flag) {
     bool res = be_quiet;
