@@ -141,7 +141,7 @@ bool SObject::readSFile(wxFileName& SFile) {
   string lib_name = SFile.GetName().ToStdString();
   replace_if(lib_name.begin(), lib_name.end(), ::isspace, '_');
   lib_file.SetName(lib_name);
-  lib_file.SetExt("lib");
+  lib_file.SetExt("inc");
   asy_file.SetName(lib_name);
   asy_file.SetExt("asy");
 #if !defined(NDEBUG)
@@ -585,7 +585,7 @@ list<string> SObject::Symbol2port(const string& symname) const {
   symbol.push_back("TEXT 0 -48 Center 2 " + symname);
   symbol.push_back("SYMATTR Prefix X");
   symbol.push_back("SYMATTR SpiceModel " + symname);
-  symbol.push_back("SYMATTR ModelFile " + symname + ".lib");
+  symbol.push_back("SYMATTR ModelFile " + symname + ".inc");
   symbol.push_back("PIN -48 0 LEFT 8");
   symbol.push_back("PINATTR PinName 1");
   symbol.push_back("PINATTR SpiceOrder 1");
@@ -606,7 +606,7 @@ list<string> SObject::Symbol1port(const string& symname) const {
   symbol.push_back("TEXT 0 -48 Center 2 " + symname);
   symbol.push_back("SYMATTR Prefix X");
   symbol.push_back("SYMATTR SpiceModel " + symname);
-  symbol.push_back("SYMATTR ModelFile " + symname + ".lib");
+  symbol.push_back("SYMATTR ModelFile " + symname + ".inc");
   symbol.push_back("PIN -48 0 LEFT 8");
   symbol.push_back("PINATTR PinName 1");
   symbol.push_back("PINATTR SpiceOrder 1");
@@ -650,7 +650,7 @@ list<string> SObject::Symbol(const string& symname) const {
       symbol.push_back("TEXT 0 -48 Center 2 " + symname);
       symbol.push_back("SYMATTR Prefix X");
       symbol.push_back("SYMATTR SpiceModel " + symname);
-      symbol.push_back("SYMATTR ModelFile " + symname + ".lib");
+      symbol.push_back("SYMATTR ModelFile " + symname + ".inc");
       // Do the left pins
       int yPin;
       int pinName = -1;
