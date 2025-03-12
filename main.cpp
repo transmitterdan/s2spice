@@ -120,17 +120,17 @@ wxEND_EVENT_TABLE()
 wxIMPLEMENT_APP(MyApp);
 
 static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
-    {wxCMD_LINE_SWITCH, _("h"), _("help"), _("displays command line options"),
+    {wxCMD_LINE_SWITCH, "h", "help", "displays command line options",
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP},
-    {wxCMD_LINE_SWITCH, _("f"), _("force"), _("overwrite any existing file"),
+    {wxCMD_LINE_SWITCH, "f", "force", "overwrite any existing file",
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_SWITCH, _("l"), _("lib"), _("creates LIB library file"),
+    {wxCMD_LINE_SWITCH, "l", "lib", "creates LIB library file",
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_SWITCH, _("s"), _("symbol"), _("creates ASY symbol file"),
+    {wxCMD_LINE_SWITCH, "s", "symbol", "creates ASY symbol file",
      wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL},
-    {wxCMD_LINE_SWITCH, _("q"), _("quiet"),
-     _("disables the GUI (for command line only usage)")},
-    {wxCMD_LINE_PARAM, _(""), _(""), _("file name"), wxCMD_LINE_VAL_STRING,
+    {wxCMD_LINE_SWITCH, "q", "quiet",
+     "disables the GUI (for command line only usage)"},
+    {wxCMD_LINE_PARAM, "", "", "file name", wxCMD_LINE_VAL_STRING,
      wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
 
     wxCMD_LINE_DESC_END};
