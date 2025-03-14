@@ -36,13 +36,13 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
       # required for CMake to find Ninja
       - name: "Set up MSVC Developer Command Prompt"
-        uses: seanmiddleditch/gha-setup-vsdevenv@v3
+        uses: seanmiddleditch/gha-setup-vsdevenv@v4
         with:
           host_arch: x86
           arch: win32
@@ -52,7 +52,7 @@ jobs:
         run: .\github_build.bat
 
       - name: Archive production artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: s2spice
           path: |
