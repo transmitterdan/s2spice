@@ -68,7 +68,7 @@ using namespace Eigen;
 #if !defined(NDEBUG)
 #if !defined(DEBUG_MESSAGE_BOX)
 #define DEBUG_MESSAGE_BOX(MESS)                                           \
-  {                                                                       \
+  std::{                                                                  \
     ostringstream message;                                                \
     message << "[" << __FILE__ << ":" << __LINE__ << "]" << endl << MESS; \
     (wxMessageBox(message.str(), _("Debug s2spice"),                      \
@@ -81,12 +81,40 @@ using namespace Eigen;
 
 class Sparam {
 public:
-  Sparam(size_t _n = 2) {
+  Sparam() {
+    Freq = 0;
+    dB = ArrayXXd::Zero(2, 2);
+    Phase = ArrayXXd::Zero(2, 2);
+  }
+  Sparam(int _n) {
     Freq = 0;
     dB = ArrayXXd::Zero(_n, _n);
     Phase = ArrayXXd::Zero(_n, _n);
   }
-
+  Sparam(size_t _n) {
+    Freq = 0;
+    dB = ArrayXXd::Zero(_n, _n);
+    Phase = ArrayXXd::Zero(_n, _n);
+  }
+  Sparam(double _f, size_t _n = 2) {
+    Freq = _f;
+    dB = ArrayXXd::Zero(_n, _n);
+    Phase = ArrayXXd::Zero(_n, _n);
+  }
+  Sparam(double _f, const MatrixXd& _dB, const MatrixXd& _Phase) {
+    Freq = _f;
+    dB = _dB;
+    Phase = _Phase;
+  }
+  Sparam(const Sparam& _s) : Freq(_s.Freq), dB(_s.dB), Phase(_s.Phase) {}
+  Sparam& operator=(const Sparam& _s) {
+    if (&_s == this)
+      return *this;
+    Freq = _s.Freq;
+    dB = _s.dB;
+    Phase = _s.Phase;
+    return *this;
+  }
   MatrixXd phaseRad() const { return (Phase * M_PI / 180.0); }
   MatrixXd phaseDeg() const { return (Phase); }
   MatrixXd mag() const {
@@ -116,7 +144,8 @@ public:
   // Create-Destroy
   SObject();
   ~SObject();
-  
+  // Don't try to use operator=()
+  SObject& operator=(const SObject& _s) = delete;
   // Accessors
   int nPorts(void) { return numPorts; }
   int nFreq(void) { return SData.size(); }
