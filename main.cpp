@@ -43,7 +43,6 @@ using namespace std;
 #include <vector>
 #include <sstream>
 #include <complex>
-#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -72,7 +71,7 @@ public:
           const wxSize& size);
 
 private:
-  SObject *SData;
+  SObject* SData;
   bool debugFlag;
   wxStreamToTextRedirector* debug_redirector;
   // This function is called when the "Open" button is clicked
@@ -109,11 +108,11 @@ private:
 
 // This is the event table for the GUI
 wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
-  EVT_BUTTON(ID_OPEN,  MyFrame::OnOpen)
-  EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
-  EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
-  EVT_BUTTON(ID_CLOSE,  MyFrame::OnQuit)
-  EVT_CLOSE(MyFrame::OnClose)
+EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
+EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
+EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
+EVT_BUTTON(ID_CLOSE, MyFrame::OnQuit)
+EVT_CLOSE(MyFrame::OnClose)
 wxEND_EVENT_TABLE()
 
 // This is the main entry point for the program
@@ -203,8 +202,8 @@ bool MyApp::OnInit() {
   if (!wxApp::OnInit()) return false;
 
   // Create the main window
-  MyFrame* frame = DBG_NEW MyFrame(_("S2spice"), &SData1, wxPoint(50, 50),
-                                   wxSize(640, 480));
+  MyFrame* frame =
+      DBG_NEW MyFrame(_("S2spice"), &SData1, wxPoint(50, 50), wxSize(640, 480));
   frame->Show(true);
 
   return true;
@@ -218,8 +217,8 @@ int MyApp::OnExit() {
 // This is the implementation of the GUI
 // If user selects -q at the command line the GUI is not shown unless -h is also
 // used
-MyFrame::MyFrame(const wxString& title, SObject* SD,
-                 const wxPoint& pos, const wxSize& size)
+MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
+                 const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
   SData = SD;
   debugFlag = true;
@@ -304,6 +303,7 @@ MyFrame::MyFrame(const wxString& title, SObject* SD,
   sz.y = sz.y * 2;
   sz.x = sz.x * 2;
   SetMinSize(sz);
+  SetSize(sz);
   Show();
 }
 
@@ -383,10 +383,12 @@ void MyFrame::OnOpen(wxCommandEvent& event) {
 }
 
 void MyFrame::OnAbout(wxCommandEvent& event) {
-  wxVersionInfo info;
+  // Obtain the year as a string from the __DATE__ macro
+  std::string date = __DATE__;
+  std::string year = date.substr(date.length() - 4);
   wxMessageBox(
       wxString::Format(
-          _("s2spice - V%s Copyright (C) <2023>  Dan Dickey\n"
+          _("%s - V%s Copyright (C) <%s>  Dan Dickey\n"
             "This program comes with ABSOLUTELY NO WARRANTY.\n"
             "This is free software, and you are welcome to redistribute it\n"
             "under certain conditions.\n\n"
@@ -395,6 +397,8 @@ void MyFrame::OnAbout(wxCommandEvent& event) {
             "and save library (LIB) and symbol (ASY) files.\n"
             "wxWidgets version: %s\n"
             "Running on: %s\n"),
-          versionString, wxVERSION_STRING, wxGetOsDescription()),
-      _("About S2spice"), wxOK | wxICON_INFORMATION, this);
+          versionName, versionString, year, wxVERSION_STRING,
+          wxGetOsDescription()),
+      wxString::Format(_("About %s"), versionName), wxOK | wxICON_INFORMATION,
+      this);
 }
