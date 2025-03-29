@@ -29,20 +29,19 @@
 #ifndef WX_PRECOMP
 #include <wx/wx.h>
 #endif /* WX_PRECOMP */
-#include <wx/wfstream.h>
-#include <wx/txtstrm.h>
 #include <wx/filename.h>
 #include <wx/tokenzr.h>
 
+#include <list>
+#include <string>
 #include <sstream>
 #include <iostream>
 #include <fstream>
 #include <utility>
 #include <complex>
 #include <algorithm>
-#include <cstdio>
 
-using namespace std;
+// using namespace std;
 
 #include "SObject.h"
 #include "stringformat.hpp"
@@ -133,6 +132,22 @@ bool SObject::openSFile(wxWindow* parent) {
   return readSFile(fileName);
 }
 
+static bool readFileToString(const std::string& filePath,
+                             std::string& oString) {
+  oString.clear();
+  std::ifstream fileStream(filePath, std::ios::in);
+  if (!fileStream.is_open()) {
+    return false;
+  }
+  fileStream.seekg(0, std::ios::end);
+  oString.reserve(fileStream.tellg());
+  fileStream.seekg(0, std::ios::beg);
+  std::ostringstream stringStream;
+  stringStream << fileStream.rdbuf();
+  oString = stringStream.str();
+  return true;
+}
+
 bool SObject::readSFile(wxFileName& SFile) {
   Clean();
   snp_file = SFile;
@@ -164,8 +179,8 @@ bool SObject::readSFile(wxFileName& SFile) {
   }
 
   {
-    wxFileInputStream input_stream(snp_file.GetFullPath());
-    if (!input_stream.IsOk()) {
+    std::string oString;
+    if (!readFileToString(snp_file.GetFullPath().ToStdString(), oString)) {
       wxString mess =
           wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__,
                            __LINE__, snp_file.GetFullPath());
@@ -198,29 +213,45 @@ bool SObject::readSFile(wxFileName& SFile) {
       }
       return false;
     }
-    wxTextInputStream text_input(input_stream);
-    wxString line;
+
+    // Set up buffers
+    const size_t lineBufSize = 500;
+    char lineIn[lineBufSize+1];
     comment_strings.Empty();
-    option_string.Clear();
+    option_string.Empty();
     data_strings.clear();
-    while (!text_input.GetInputStream().Eof()) {
-      line.Empty();
-      line = text_input.ReadLine();
-      line.Trim();
-      line.Trim(wxFalse);
-      if (line.StartsWith("!"))
+    std::istringstream istream(oString);
+    oString.clear();
+    std::ostringstream data_stream;
+
+    // Read the file
+    while (istream.getline(lineIn,lineBufSize)) {
+      wxString line(lineIn);
+      if (line.StartsWith("!") || line.StartsWith(";") ||
+          line.StartsWith("*")) {
         comment_strings.push_back(line);
-      else if (line.StartsWith(";"))
-        comment_strings.push_back(line);
-      else if (line.StartsWith("*"))
-        comment_strings.push_back(line);
-      else if (line.StartsWith("#"))
+      } else if (option_string.IsEmpty() && line.StartsWith("#")) {
+        // take the first option line, ignore the rest
         option_string = line.MakeUpper();
-      else {
-        data_strings.append(line.ToStdString());
-        data_strings.append(" ");
+      } else {
+        data_stream << line.ToStdString() << " ";
       }
     }
+
+    if (option_string.IsEmpty())
+    {
+      wxString mess =
+          wxString::Format(_("%s:%d SOjbect::readSFile:File '%s' has incorrect format. No # specification."),
+                           __FILE__, __LINE__, snp_file.GetFullPath());
+      if (be_quiet) {
+        cout << mess << endl;
+      } else {
+        wxLogError(mess);
+      }
+      return false;
+    }
+
+    data_strings = data_stream.str();
     inputFormat = "MAG";  // default mag/angle
     fUnits = 1e9;
     parameterType = "S";
