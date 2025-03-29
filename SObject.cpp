@@ -204,7 +204,7 @@ bool SObject::readSFile(wxFileName& SFile) {
     numPorts = stoi(strPorts);
     if (numPorts < 1 || numPorts > 90) {
       wxString mess =
-          wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+          wxString::Format(_("%s:%d SObject::readSFile:Cannot read file '%s'."),
                            __FILE__, __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
@@ -241,7 +241,7 @@ bool SObject::readSFile(wxFileName& SFile) {
     if (option_string.IsEmpty())
     {
       wxString mess =
-          wxString::Format(_("%s:%d SOjbect::readSFile:File '%s' has incorrect format. No # specification."),
+          wxString::Format(_("%s:%d SObject::readSFile:File '%s' has incorrect format. No # specification."),
                            __FILE__, __LINE__, snp_file.GetFullPath());
       if (be_quiet) {
         cout << mess << endl;
@@ -325,7 +325,7 @@ void SObject::Convert2Input(double& A, double& B) {
     B = phase;
   } else {
     wxString mess = wxString::Format(
-        _("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
+        _("%s:%d SObject::WriteLIB:Cannot handle %s format data file."),
         __FILE__, __LINE__, wxString(parameterType));
     if (be_quiet) {
       cout << mess << endl;
@@ -341,7 +341,7 @@ bool SObject::WriteLIB() {
   int npMult = 100;
   if (parameterType.compare("S") != 0) {
     wxString mess =
-      wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
+      wxString::Format(_("%s:%d SObject::WriteLIB:Cannot handle %s format data file."),
                        __FILE__, __LINE__, wxString(parameterType));
     if (be_quiet) {
       cout << mess << endl;
@@ -350,51 +350,40 @@ bool SObject::WriteLIB() {
     }
     return false;
   }
-	  
-  ofstream output_stream(libName);
-  if (!output_stream) {
-    wxString mess =
-        wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."),
-                         __FILE__, __LINE__, libName);
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
-  }
-  output_stream << ".SUBCKT " << lib_file.GetName() << " ";
-  for (int i = 0; i < numPorts + 1; i++) output_stream << " " << i + 1;
-  output_stream << "\n";
-  output_stream
+	
+  std::ostringstream oss;
+  oss << ".SUBCKT " << lib_file.GetName() << " ";
+  for (int i = 0; i < numPorts + 1; i++) oss << " " << i + 1;
+  oss << "\n";
+  oss
       << "* Pin " << numPorts + 1
       << " is the reference plane (usually it should be connected to GND)\n";
 
   for (int i = 0; i < comment_strings.Count(); i++) {
-    output_stream << "*" << comment_strings[i].Mid(1) << "\n";
+    oss << "*" << comment_strings[i].Mid(1) << "\n";
   }
-  output_stream << "*" << option_string.Mid(1) << "\n";
-  output_stream << "*";
+  oss << "*" << option_string.Mid(1) << "\n";
+  oss << "*";
 
   for (int i = 0; i < numPorts; i++) {
-    output_stream << " Z" << i + 1 << " = " << Z0;
+    oss << " Z" << i + 1 << " = " << Z0;
   }
-  output_stream << "\n";
+  oss << "\n";
 
   /* define resistances for Spice model */
 
   for (int i = 0; i < numPorts; i++) {
-    output_stream << stringFormat("R%dN %d %d %e\n", i + 1, i + 1,
+    oss << stringFormat("R%dN %d %d %e\n", i + 1, i + 1,
                                   npMult * (i + 1), -Z0);
-    output_stream << stringFormat("R%dP %d %d %f\n", i + 1, npMult * (i + 1),
+    oss << stringFormat("R%dP %d %d %f\n", i + 1, npMult * (i + 1),
                                   numPorts+1, 2 * Z0);
   }
 
-  output_stream << "\n";
+  oss << "\n";
   for (int i = 0; i < numPorts; i++) {
     for (int j = 0; j < numPorts; j++) {
-      output_stream << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1, inputFormat);
-      output_stream << stringFormat(
+      oss << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1, inputFormat);
+      oss << stringFormat(
           "G%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
           numPorts+1, npMult * (i + 1),
           npMult * (j + 1), numPorts + 1, inputFormat);
@@ -403,14 +392,28 @@ bool SObject::WriteLIB() {
         A = A - 20 * log10(2*Z0);
         double B = s->Phase(i, j);
         Convert2Input(A, B);
-        output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", s->Freq, A, B);
+        oss << stringFormat("+(%14eHz,%14e,%14e)\n", s->Freq, A, B);
       }
     }
-    output_stream << "\n";
+    oss << "\n";
   }
 
-  output_stream << ".ENDS * " << lib_file.GetName() << "\n";
-  output_stream.close();
+  oss << ".ENDS * " << lib_file.GetName() << "\n";
+  ofstream output_stream(libName);
+  if (!output_stream) {
+    wxString mess =
+        wxString::Format(_("%s:%d SObject::WriteLIB:Cannot create file '%s'."),
+                         __FILE__, __LINE__, libName);
+    if (be_quiet) {
+      cout << mess << endl;
+    } else {
+      wxLogError(mess);
+    }
+    return false;
+  }
+  output_stream << oss.str();
+  output_stream.close();  // flush the output
+
   data_saved = true;
   return !error;
 }

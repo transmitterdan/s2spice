@@ -345,7 +345,7 @@ void MyFrame::OnMkLIB(wxCommandEvent& event) {
         wxString::Format(_("S2spice: Library file %s successfully created."),
                          SData->getLIBfile().GetFullPath());
     SetStatusText(mess);
-    if (SData->GetQuiet()) cout << mess << "\n";
+    cout << mess << "\n";
   }
 }
 
@@ -358,7 +358,7 @@ void MyFrame::OnMkASY(wxCommandEvent& event) {
         wxString::Format(_("S2spice: Symbol file %s successfully created."),
                          SData->getASYfile().GetFullPath()));
     SetStatusText(mess);
-    if (SData->GetQuiet()) cout << mess << "\n";
+    cout << mess << "\n";
   }
 }
 
@@ -368,17 +368,17 @@ void MyFrame::OnOpen(wxCommandEvent& event) {
     mess = wxString::Format(_("S2spice: Data successfully imported from %s."),
                             SData->getSNPfile().GetFullPath());
     SetStatusText(mess);
-    if (SData->GetQuiet()) cout << mess << "\n";
+    cout << mess << "\n";
     mess = wxString::Format(
         _("S2spice: First Frequency = %g, Last Frequency = %g."),
         SData->fBegin(), SData->fEnd());
     SetStatusText(mess);
-    if (SData->GetQuiet()) cout << mess << "\n";
+    cout << mess << "\n";
   } else {
     mess = wxString::Format(_("S2spice: Data import from %s failed!"),
                             SData->getSNPfile().GetFullPath());
     SetStatusText(mess);
-    if (SData->GetQuiet()) cout << mess << "\n";
+    cout << mess << "\n";
   }
 }
 
