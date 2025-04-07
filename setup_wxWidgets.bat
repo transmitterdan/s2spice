@@ -8,7 +8,7 @@ REM
 REM To bypass downloading the wxWidgets libraries do this:
 REM .\setup_wxWidgets.bat build
 
-set "wxVER=3.2.1"
+set "wxVER=3.2.7"
 for /f "tokens=*" %%a in ('cd') do (
     set VAR=%%a
 )
@@ -16,12 +16,12 @@ set "wxWIN=%VAR%\wxWidgets-%wxVER%"
 set "wxWidgets_ROOT_DIR=%wxWIN%"
 if "%1" == "build" goto :build
 if exist "%wxWIN%" (rmdir /s /q "%wxWIN%")
-curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Dev.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_Dev.7z"
+curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Dev.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_x64_Dev.7z"
 if not %errorlevel%==0 (exit /b 1)
 7z x -o%WXWIN% "wxWidgets-%wxVER%-Dev.7z"
 if not %errorlevel%==0 (exit /b 1)
 del "wxWidgets-%wxVER%-Dev.7z"
-curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Release.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_ReleaseDLL.7z"
+curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Release.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_x64_ReleaseDLL.7z"
 if not %errorlevel%==0 (exit /b 1)
 7z x -y -o%WXWIN% "wxWidgets-%wxVER%-Release.7z"
 if not %errorlevel%==0 (exit /b 1)
@@ -44,7 +44,7 @@ REM * debug version.  The debug version has better error messages if an error *
 REM * should happen.                                                          *
 REM ***************************************************************************
 if exist .\build rmdir /s /q .\build
-mkdir build && cd build && cmake -A Win32 .. && cmake --build . --config Release --target package && cmake --build . --config Debug
+mkdir build && cd build && cmake -A x64 .. && cmake --build . --config Release --target package && cmake --build . --config Debug
 if %errorlevel% == 0 goto :ok
 @echo Error during build proces
 exit /b 1
