@@ -29,7 +29,7 @@ python -m pip install -q cryptography
 
 :: Install pre-compiled wxWidgets and other DLL; add required paths.
 ::
-set "wxVER=3.2.1"
+set "wxVER=3.2.7"
 for /f "tokens=*" %%a in ('cd') do (
     set VAR=%%a
 )
@@ -39,7 +39,7 @@ if exist "%wxWIN%" (rmdir /s /q "%wxWIN%")
 curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Dev.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_Dev.7z"
 7z x -o%WXWIN% "wxWidgets-%wxVER%-Dev.7z"
 del "wxWidgets-%wxVER%-Dev.7z"
-curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Release.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_ReleaseDLL.7z"
+curl --tls-max 1.2 -L --output "wxWidgets-%wxVER%-Release.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxMSW-%wxVER%_vc14x_x64_ReleaseDLL.7z"
 7z x -y -o%WXWIN% "wxWidgets-%wxVER%-Release.7z"
 del "wxWidgets-%wxVER%-Release.7z"
 curl --tls-max 1.2 -L --output "wxWidgets-headers.7z" "https://github.com/wxWidgets/wxWidgets/releases/download/v%wxVER%/wxWidgets-%wxVER%-headers.7z"
