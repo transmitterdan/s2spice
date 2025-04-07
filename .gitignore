@@ -1,5 +1,11 @@
 build
 wxWidgets-3.2.1
+wxWidgets-3.2.2
+wxWidgets-3.2.3
+wxWidgets-3.2.4
+wxWidgets-3.2.5
+wxWidgets-3.2.6
+wxWidgets-3.2.7
 .vscode
 .vs
 version.h
