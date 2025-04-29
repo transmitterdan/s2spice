@@ -97,7 +97,7 @@ Release build on debian like (e.g. Ubuntu):
 mkdir ~/myProjects
 cd ~/myProjects
 sudo apt update
-sudo apt install libwxbase3.0-dev  ; or whatever is latest version of wxWidgets
+sudo apt install libwxgtk3.2-dev  ; or whatever is latest version of wxWidgets
 git clone --recursive https://github.com/transmitterdan/s2spice.git
 cd s2spice
 git checkout main --recurse-submodules
