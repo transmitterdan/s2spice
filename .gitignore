@@ -5,6 +5,7 @@ wxWidgets-3.2.1
 version.h
 version.bat
 Test/*.lib
+Test/*.inc
 Test/*.asy
 Test/*.log
 Test/*.raw
