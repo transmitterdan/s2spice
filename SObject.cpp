@@ -485,7 +485,7 @@ bool SObject::Convert2S() {
     }
   }
 
-  Sparam S(numPorts);
+  Sparam S((size_t) numPorts);
   double prevFreq = 0;
   int nFrequencies = 0;
   for (auto rd = raw_data.begin(); rd != raw_data.end();) {
