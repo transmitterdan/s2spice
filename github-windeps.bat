@@ -29,7 +29,7 @@ python -m pip install -q cryptography
 
 :: Install pre-compiled wxWidgets and other DLL; add required paths.
 ::
-set "wxVER=3.2.1"
+set "wxVER=3.2.8"
 for /f "tokens=*" %%a in ('cd') do (
     set VAR=%%a
 )
