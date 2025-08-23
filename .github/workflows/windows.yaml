@@ -42,7 +42,7 @@ jobs:
 
       # required for CMake to find Ninja
       - name: "Set up MSVC Developer Command Prompt"
-        uses: seanmiddleditch/gha-setup-vsdevenv@v4
+        uses: seanmiddleditch/gha-setup-vsdevenv@v5
         with:
           host_arch: x86
           arch: win32
