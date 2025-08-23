@@ -8,7 +8,7 @@ REM
 REM To bypass downloading the wxWidgets libraries do this:
 REM .\setup_wxWidgets.bat build
 
-set "wxVER=3.2.1"
+set "wxVER=3.2.8"
 for /f "tokens=*" %%a in ('cd') do (
     set VAR=%%a
 )
