@@ -398,7 +398,7 @@ MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
   // shut down the main frame
-  Close(false);
+  Close(false);  // Allow OnClose() to check for unsaved data and veto
 }
 
 void MyFrame::OnClose(wxCloseEvent& event) {
