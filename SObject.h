@@ -215,7 +215,7 @@ private:
   double Z0;               // reference Z
   vector<double> Ref;      // reference impedance for each port
   int numFreq;             // number of frequency points
-  int Ver;                 // S-parameter file version
+  double Ver;              // S-parameter file version
   string inputFormat;      // data format (DB, MA or RI)
   string parameterType;    // type of parameter (S is the only allowed type)
   wxString option_string;  // meta data strings

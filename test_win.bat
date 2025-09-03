@@ -26,7 +26,7 @@
             "%BIN%" -l -s -q -f "%%F"
             if not exist "%%~nF.inc" (
               echo Missing output: %%~nF.inc
-             set FAILED=1
+              set FAILED=1
             )
             if not exist "%%~nF.asy" (
               echo Missing output: %%~nF.asy
@@ -40,7 +40,7 @@
             "%BIN%" -l -s -q -f "%%F"
             if not exist "%%~nF.inc" (
               echo Missing output: %%~nF.inc
-             set FAILED=1
+              set FAILED=1
             )
             if not exist "%%~nF.asy" (
               echo Missing output: %%~nF.asy

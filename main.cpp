@@ -179,7 +179,7 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
     wxFileName SFile(parser.GetParam(i));
     if (!SData1.readSFile(SFile)) {
       wxString mess =
-          wxString::Format(_("%s:%d ASY file %s creation failed."), __FILE__,
+          wxString::Format(_("%s:%d S-parameter file %s could not be read."), __FILE__,
                            __LINE__, SFile.GetFullPath().c_str());
       HandleMessage(mess, SData1.GetQuiet());
       retCode = 1;
