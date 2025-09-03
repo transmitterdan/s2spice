@@ -24,32 +24,32 @@
           for %%F in ("*.s?p") do (
             echo Running "%BIN%" -l -s -q -f "%%F"
             "%BIN%" -l -s -q -f "%%F"
-            if errorlevel 1 goto :continue1
-            if not exist "%%~nF.inc" (
-              echo Missing output: %%~nF.inc
-              set FAILED=1
+            if not errorlevel 1 (
+              if not exist "%%~nF.inc" (
+                echo Missing output: %%~nF.inc
+                set FAILED=1
+              )
+              if not exist "%%~nF.asy" (
+                echo Missing output: %%~nF.asy
+                set FAILED=1
+              )
             )
-            if not exist "%%~nF.asy" (
-              echo Missing output: %%~nF.asy
-              set FAILED=1
-            )
-            :continue1
           )
           del *.inc
           del *.asy
           for %%F in ("*.ts") do (
             echo Running "%BIN%" -l -s -q "%%F"
             "%BIN%" -l -s -q -f "%%F"
-            if errorlevel 1 goto :continue2
-            if not exist "%%~nF.inc" (
-              echo Missing output: %%~nF.inc
-              set FAILED=1
+            if not errorlevel 1 (
+              if not exist "%%~nF.inc" (
+                echo Missing output: %%~nF.inc
+                set FAILED=1
+              )
+              if not exist "%%~nF.asy" (
+                echo Missing output: %%~nF.asy
+                set FAILED=1
+              )
             )
-            if not exist "%%~nF.asy" (
-              echo Missing output: %%~nF.asy
-              set FAILED=1
-            )
-            :continue2
           )
           if "%FAILED%"=="1" (
             echo One or more CLI tests failed.
