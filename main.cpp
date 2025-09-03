@@ -127,6 +127,7 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
   EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
   EVT_BUTTON(ID_CLOSE, MyFrame::OnQuit)
+  EVT_BUTTON(wxID_ABOUT, MyFrame::OnAbout)
   EVT_CLOSE(MyFrame::OnClose)
 wxEND_EVENT_TABLE()
 
@@ -323,17 +324,16 @@ MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
 
   // Create the buttons
   wxButton* openButton = DBG_NEW wxButton(mainPanel, ID_OPEN, _("Open"));
-  openButton->Bind(wxEVT_BUTTON, &MyFrame::OnOpen, this);
   buttonRowSizer->Add(openButton, wxALIGN_LEFT);
+
   wxButton* libButton = DBG_NEW wxButton(mainPanel, ID_MKLIB, _("Save LIB"));
-  libButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkLIB, this);
   buttonRowSizer->Add(libButton, wxALIGN_LEFT);
+
   wxButton* symButton = DBG_NEW wxButton(mainPanel, ID_MKSYM, _("Save SYM"));
-  symButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkASY, this);
   buttonRowSizer->Add(symButton, wxALIGN_LEFT);
+
   wxButton* aboutButton =
       DBG_NEW wxButton(mainPanel, wxID_ABOUT, _("About..."));
-  aboutButton->Bind(wxEVT_BUTTON, &MyFrame::OnAbout, this);
   buttonRowSizer->Add(aboutButton, wxALIGN_LEFT);
   frameSizer->Add(buttonRowSizer);
 
