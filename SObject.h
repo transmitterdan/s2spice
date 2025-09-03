@@ -199,6 +199,21 @@ public:
   void Clean();
 
 private:
+  // Step 0: file targets + defaults
+  void InitTargetsAndDefaults(const wxFileName& SFile);
+
+  // Step 1: decide V2 and (if not V2) numPorts from extension
+  bool DeterminePortsAndVersionFromExt(bool& v2);
+
+  // Step 2: scan lines and collect metadata + raw data strings
+  bool ParseTouchstone(wxTextInputStream& in, bool v2);
+
+  // Step 3: parse the "# ..." header options for units/format/type/Z0
+  bool ParseOptionsFromHeader();
+
+  // Step 4: final validation before conversion
+  bool ValidateAfterParse() const;
+
   vector<Sparam> SData;
   string data_strings;            // String array of data from SnP file
   wxArrayString comment_strings;  // String array of comments from SnP file
