@@ -40,7 +40,7 @@
           for %%F in ("*.ts") do (
             echo Running "%BIN%" -l -s -q "%%F"
             "%BIN%" -l -s -q -f "%%F"
-            if errorlevel 1 got :continue2
+            if errorlevel 1 goto :continue2
             if not exist "%%~nF.inc" (
               echo Missing output: %%~nF.inc
               set FAILED=1
