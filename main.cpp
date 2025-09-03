@@ -33,7 +33,8 @@
 #include <wx/cmdline.h>
 #include <wx/sizer.h>
 #include <wx/event.h>
-
+#include <wx/config.h>
+#include <wx/display.h>
 #include "SObject.h"
 
 using namespace std;
@@ -51,6 +52,18 @@ using namespace std;
 
 #include "version.h"
 
+static wxRect EnsureOnScreen(const wxRect& r) {
+  // If the rect is off-screen, move it to the primary display's client area.
+  for (unsigned i = 0; i < wxDisplay::GetCount(); ++i) {
+    wxDisplay d(i);
+    if (r.Intersects(d.GetClientArea())) return r;
+  }
+  wxRect ca = wxDisplay(wxDisplay::GetFromPoint(wxPoint(0, 0))).GetClientArea();
+  wxSize size = r.GetSize();
+  size.IncTo(wxSize(640, 400));  // enforce a minimum
+  return wxRect(ca.GetTopLeft() + wxPoint(20, 20), size);
+}
+
 // This is the main class for the program
 class MyApp : public wxApp {
 public:
@@ -62,6 +75,8 @@ public:
 
 private:
   SObject SData1;
+  bool gui_no_start;
+  int retCode;
 };
 
 // This is the main event handler for the program
@@ -108,14 +123,14 @@ private:
 
 // This is the event table for the GUI
 wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
-EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
-EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
-EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
-EVT_BUTTON(ID_CLOSE, MyFrame::OnQuit)
-EVT_CLOSE(MyFrame::OnClose)
+  EVT_BUTTON(ID_OPEN, MyFrame::OnOpen)
+  EVT_BUTTON(ID_MKLIB, MyFrame::OnMkLIB)
+  EVT_BUTTON(ID_MKSYM, MyFrame::OnMkASY)
+  EVT_BUTTON(ID_CLOSE, MyFrame::OnQuit)
+  EVT_CLOSE(MyFrame::OnClose)
 wxEND_EVENT_TABLE()
 
-// This is the main entry point for the program
+    // This is the main entry point for the program
 wxIMPLEMENT_APP(MyApp);
 
 static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
@@ -136,15 +151,17 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] = {
 
 // This is the implementation of the MyApp class
 int MyApp::OnRun() {
-  int exitcode = wxApp::OnRun();
-#if !defined(NDEBUG) && defined(__WINDOWS__)
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
+  if (gui_no_start) return false;
+  wxApp::OnRun();
   // wxTheClipboard->Flush();
-  return exitcode;
+  return false;
 }
 
 void MyApp::OnInitCmdLine(wxCmdLineParser& parser) {
+#if !defined(NDEBUG) && defined(__WINDOWS__)
+  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
   parser.SetDesc(g_cmdLineDesc);
   // must refuse '/' as parameter starter or cannot use "/path" style paths
   // parser.SetSwitchChars(_("-"));
@@ -160,7 +177,14 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
   SData1.SetForce(parser.Found(_("f")));
   for (int i = 0; i < pCount; i++) {
     wxFileName SFile(parser.GetParam(i));
-    if (!SData1.readSFile(SFile)) return false;
+    if (!SData1.readSFile(SFile)) {
+      wxString mess =
+          wxString::Format(_("%s:%d ASY file %s creation failed."), __FILE__,
+                           __LINE__, SFile.GetFullPath().c_str());
+      HandleMessage(mess, SData1.GetQuiet());
+      retCode = 1;
+      return false;
+    }
 
     // Should we create the symbol file?
     if (parser.Found(_("s"))) {
@@ -168,14 +192,18 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         wxString mess = wxString::Format(
             _("%s:%d ASY file %s already exists.  Delete it first."), __FILE__,
             __LINE__, SData1.getASYfile().GetFullPath().c_str());
-        if (SData1.GetQuiet()) {
-          cout << mess << endl;
-        } else {
-          wxLogError(mess);
-        }
+        HandleMessage(mess, SData1.GetQuiet());
+        retCode = 2;
         return false;
       }
-      if (!SData1.WriteASY()) return false;
+      if (!SData1.WriteASY()) {
+        wxString mess = wxString::Format(
+            _("%s:%d ASY file %s creation failed."), __FILE__, __LINE__,
+            SData1.getASYfile().GetFullPath().c_str());
+        HandleMessage(mess, SData1.GetQuiet());
+        retCode = 3;
+        return false;
+      }
     }
 
     // Should we create the library file?
@@ -184,34 +212,52 @@ bool MyApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         wxString mess = wxString::Format(
             _("%s:%d LIB file %s already exists.  Delete it first."), __FILE__,
             __LINE__, SData1.getLIBfile().GetFullPath().c_str());
-        if (SData1.GetQuiet()) {
-          cout << mess << endl;
-        } else {
-          wxLogError(mess);
-        }
+        HandleMessage(mess, SData1.GetQuiet());
+        retCode = 4;
         return false;
       }
-      if (!SData1.WriteLIB()) return false;
+      if (!SData1.WriteLIB()) {
+        wxString mess = wxString::Format(
+            _("%s:%d LIB file %s not created."), __FILE__, __LINE__,
+            SData1.getLIBfile().GetFullPath().c_str());
+        HandleMessage(mess, SData1.GetQuiet());
+        retCode = 5;
+        return false;
+      }
     }
   }
-  return !SData1.GetQuiet();
+  if (SData1.GetQuiet()) gui_no_start = true;
+  return true;
 }
 
 bool MyApp::OnInit() {
   // init wxApp parent object
-  if (!wxApp::OnInit()) return false;
+  gui_no_start = false;
+  retCode = 0;
 
-  // Create the main window
-  MyFrame* frame =
-      DBG_NEW MyFrame(_("S2spice"), &SData1, wxPoint(50, 50), wxSize(640, 480));
-  frame->Show(true);
+  bool ok = wxApp::OnInit();
+
+  if (gui_no_start || !ok) {
+#if wxCHECK_VERSION(3, 3, 0)
+    SetErrorExitCode(retCode);
+#endif
+    return true;  // Return no error but do not start GUI
+  } else {
+    SetVendorName("Transmitterdan");
+    SetAppName("S2spice");
+
+    // Create the main window
+    MyFrame* frame = DBG_NEW MyFrame(_("S2spice"), &SData1, wxDefaultPosition,
+                                     wxDefaultSize);
+    frame->Show(true);
+  }
 
   return true;
 }
 
 int MyApp::OnExit() {
   // clean up
-  return 0;
+  return retCode;
 }
 
 // This is the implementation of the GUI
@@ -220,6 +266,7 @@ int MyApp::OnExit() {
 MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
                  const wxSize& size)
     : wxFrame(nullptr, wxID_ANY, title, pos, size) {
+
   SData = SD;
   debugFlag = true;
   debug_redirector = NULL;
@@ -248,18 +295,26 @@ MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
   // Instead of writing an event handler we use a little functor
   // to connect to the menu events
   menuBar->Bind(wxEVT_MENU, [&](wxCommandEvent& event) {
-    if (event.GetId() == ID_OPEN)
-      OnOpen(event);
-    else if (event.GetId() == ID_MKSYM)
-      OnMkASY(event);
-    else if (event.GetId() == ID_MKLIB)
-      OnMkLIB(event);
-    else if (event.GetId() == wxID_ABOUT)
-      OnAbout(event);
-    else if (event.GetId() == wxID_EXIT)
-      OnQuit(event);
-    else
-      event.Skip();
+    switch (event.GetId()) {
+      case ID_OPEN:
+        OnOpen(event);
+        break;
+      case ID_MKSYM:
+        OnMkASY(event);
+        break;
+      case ID_MKLIB:
+        OnMkLIB(event);
+        break;
+      case wxID_ABOUT:
+        OnAbout(event);
+        break;
+      case wxID_EXIT:
+        OnQuit(event);
+        break;
+      default:
+        event.Skip();
+        break;
+    }
   });
 
   wxBoxSizer* frameSizer = DBG_NEW wxBoxSizer(wxVERTICAL);
@@ -267,13 +322,13 @@ MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
   wxSizer* buttonRowSizer = DBG_NEW wxBoxSizer(wxHORIZONTAL);
 
   // Create the buttons
-  wxButton* openButton = DBG_NEW wxButton(mainPanel, wxID_ANY, _("Open"));
+  wxButton* openButton = DBG_NEW wxButton(mainPanel, ID_OPEN, _("Open"));
   openButton->Bind(wxEVT_BUTTON, &MyFrame::OnOpen, this);
   buttonRowSizer->Add(openButton, wxALIGN_LEFT);
-  wxButton* libButton = DBG_NEW wxButton(mainPanel, wxID_ANY, _("Save LIB"));
+  wxButton* libButton = DBG_NEW wxButton(mainPanel, ID_MKLIB, _("Save LIB"));
   libButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkLIB, this);
   buttonRowSizer->Add(libButton, wxALIGN_LEFT);
-  wxButton* symButton = DBG_NEW wxButton(mainPanel, wxID_ANY, _("Save SYM"));
+  wxButton* symButton = DBG_NEW wxButton(mainPanel, ID_MKSYM, _("Save SYM"));
   symButton->Bind(wxEVT_BUTTON, &MyFrame::OnMkASY, this);
   buttonRowSizer->Add(symButton, wxALIGN_LEFT);
   wxButton* aboutButton =
@@ -282,35 +337,68 @@ MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
   buttonRowSizer->Add(aboutButton, wxALIGN_LEFT);
   frameSizer->Add(buttonRowSizer);
 
-  wxSizer* debugPanelSizer =
-      DBG_NEW wxStaticBoxSizer(wxHORIZONTAL, mainPanel, "Log Messages");
+  wxStaticBox* debugStaticBox =
+      DBG_NEW wxStaticBox(mainPanel, wxID_ANY, _("Debug Messages"));
+  wxSizer* debugBoxSizer =
+      DBG_NEW wxStaticBoxSizer(debugStaticBox, wxHORIZONTAL);
+  wxTextCtrl* debugWindow = DBG_NEW wxTextCtrl(
+      debugStaticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize,
+      wxTE_READONLY | wxTE_MULTILINE | wxTE_RICH2);
   wxColour txtClr(0, 180, 0);
   wxColour bkgdClr(*wxBLACK);
-  wxTextCtrl* debugWindow = DBG_NEW wxTextCtrl(
-      mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize,
-      wxTE_READONLY | wxTE_MULTILINE | wxTE_RICH2);
   debugWindow->SetBackgroundColour(bkgdClr);
   debug_redirector = DBG_NEW wxStreamToTextRedirector(debugWindow);
-  debugPanelSizer->Add(debugWindow, 1, wxEXPAND);
-  frameSizer->Add(debugPanelSizer, 1, wxEXPAND);
-  debugPanelSizer->SetSizeHints(this);
+  debugBoxSizer->Add(debugWindow, 1, wxEXPAND);
+  frameSizer->Add(debugBoxSizer, 1, wxEXPAND);
+  debugBoxSizer->SetSizeHints(this);
   debugWindow->SetDefaultStyle(wxTextAttr(txtClr, bkgdClr));
 
   mainPanel->SetSizer(frameSizer);
   frameSizer->SetSizeHints(this);
   Layout();
-  wxSize sz = GetSize();
-  sz.y = sz.y * 2;
-  sz.x = sz.x * 2;
-  SetMinSize(sz);
-  SetSize(sz);
+  // Restore persisted geometry AFTER the UI is built
+  {
+    wxConfig cfg(wxTheApp->GetAppName());
+    long x = wxDefaultCoord, y = wxDefaultCoord, w = 800, h = 600;
+    bool maximized = false;
+
+    cfg.Read("MainFrame/x", &x);
+    cfg.Read("MainFrame/y", &y);
+    cfg.Read("MainFrame/w", &w);
+    cfg.Read("MainFrame/h", &h);
+    cfg.Read("MainFrame/max", &maximized, false);
+
+    wxRect r(x, y, w, h);
+    r = EnsureOnScreen(r);
+
+    if (maximized)
+      Maximize(true);
+    else
+      SetSize(r);
+
+    // Save on close
+    Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& e) {
+      wxConfig cfg(wxTheApp->GetAppName());
+      if (IsMaximized()) {
+        cfg.Write("MainFrame/max", true);
+      } else {
+        cfg.Write("MainFrame/max", false);
+        wxRect r = GetRect();
+        cfg.Write("MainFrame/x", (long)r.GetX());
+        cfg.Write("MainFrame/y", (long)r.GetY());
+        cfg.Write("MainFrame/w", (long)r.GetWidth());
+        cfg.Write("MainFrame/h", (long)r.GetHeight());
+      }
+      cfg.Flush();
+      e.Skip();
+    });
+  }
   Show();
 }
 
 void MyFrame::OnQuit(wxCommandEvent& event) {
   // shut down the main frame
   Close(false);
-  assert(!debugFlag);
 }
 
 void MyFrame::OnClose(wxCloseEvent& event) {
