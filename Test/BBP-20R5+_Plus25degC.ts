@@ -7,6 +7,7 @@
 [Version] 2.0
 # MHz S DB R 50														
 [Number of Ports] 2
+[Two-Port Data Order] S21_S12
 [Number of Frequencies] 421
 [Reference] 50 50
 [Network Data] 
