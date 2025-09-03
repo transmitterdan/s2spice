@@ -176,7 +176,7 @@ bool SObject::DeterminePortsAndVersionFromExt(bool& v2) {
     }
   }
   wxString mess =
-      wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+      wxString::Format(_("%s:%d SObject::readSFile:Cannot read file '%s'."),
                        __FILE__, __LINE__, snp_file.GetFullPath());
   return HandleMessage(mess, be_quiet);
 }
@@ -242,7 +242,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
           line.AfterFirst(']'), wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
       if (references.GetCount() < 1) {
         wxString mess =
-            wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
+            wxString::Format(_("%s:%d SObject::readSFile:Cannot process file "
                                "'%s'. [Reference] Wrong number of ports"),
                              __FILE__, __LINE__, snp_file.GetFullPath());
         return HandleMessage(mess, be_quiet);
@@ -251,7 +251,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
       bool ok = references[0].ToDouble(&Zref);
       if (!ok) {
         wxString mess = wxString::Format(
-            _("%s:%d SOjbect::readSFile:Cannot process file "
+            _("%s:%d SObject::readSFile:Cannot process file "
               "'%s'. [%s] Not a number"),
             __FILE__, __LINE__, snp_file.GetFullPath(), references[0]);
         return HandleMessage(mess, be_quiet);
@@ -262,7 +262,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
           ok = references[i].ToDouble(&Zref);
           if (!ok) {
             wxString mess = wxString::Format(
-                _("%s:%d SOjbect::readSFile:Cannot process file "
+                _("%s:%d SObject::readSFile:Cannot process file "
                   "'%s'. [%s] Not a number"),
                 __FILE__, __LINE__, snp_file.GetFullPath(), references[i]);
             return HandleMessage(mess, be_quiet);
@@ -283,7 +283,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
       wxString matrix_format_str = line.AfterFirst(']').Trim().Trim(wxFalse);
       if (!(matrix_format_str.StartsWith("Full"))) {
         wxString mess =
-            wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
+            wxString::Format(_("%s:%d SObject::readSFile:Cannot process file "
                                "'%s'. [Matrix Format] Unknown"),
                              __FILE__, __LINE__, snp_file.GetFullPath());
         return HandleMessage(mess, be_quiet);
@@ -292,7 +292,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
     }
     if (line.StartsWith("[Mixed Mode Order]")) {
       wxString mess =
-          wxString::Format(_("%s:%d SOjbect::readSFile:Cannot Process file "
+          wxString::Format(_("%s:%d SObject::readSFile:Cannot Process file "
                              "'%s'.[Mixed Mode Order] Not supported"),
                            __FILE__, __LINE__, snp_file.GetFullPath());
       return HandleMessage(mess, be_quiet);
@@ -305,7 +305,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
 
   if (data_strings.length() < 2) {
     wxString mess = wxString::Format(
-        _("%s:%d SOjbect::readSFile:Cannot process file '%s'."), __FILE__,
+        _("%s:%d SObject::readSFile:Cannot process file '%s'."), __FILE__,
         __LINE__, snp_file.GetFullPath());
     return HandleMessage(mess, be_quiet);
   }
@@ -347,7 +347,7 @@ bool SObject::ParseOptionsFromHeader() {
 bool SObject::ValidateAfterParse() const {
   if (numPorts < 1 || numPorts > 90) {
     wxString mess =
-        wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+        wxString::Format(_("%s:%d SObject::readSFile:Cannot read file '%s'."),
                          __FILE__, __LINE__, snp_file.GetFullPath());
     HandleMessage(mess, be_quiet);
   }
@@ -383,7 +383,7 @@ void SObject::Convert2Input(double& A, double& B) {
     B = phase;
   } else {
     wxString mess = wxString::Format(
-        _("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
+        _("%s:%d SObject::WriteLIB:Cannot handle %s format data file."),
         __FILE__, __LINE__, wxString(parameterType));
     error = true;
     HandleMessage(mess, be_quiet);
@@ -395,7 +395,7 @@ bool SObject::WriteLIB() {
   int npMult = 100;
   if (parameterType.compare("S") != 0) {
     wxString mess = wxString::Format(
-        _("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
+        _("%s:%d SObject::WriteLIB:Cannot handle %s format data file."),
         __FILE__, __LINE__, wxString(parameterType));
     return HandleMessage(mess, be_quiet);
   }
@@ -403,7 +403,7 @@ bool SObject::WriteLIB() {
   ofstream output_stream(libName);
   if (!output_stream) {
     wxString mess =
-        wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."),
+        wxString::Format(_("%s:%d SObject::WriteLIB:Cannot create file '%s'."),
                          __FILE__, __LINE__, libName);
     return HandleMessage(mess, be_quiet);
   }
