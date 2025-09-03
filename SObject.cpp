@@ -83,37 +83,21 @@ bool SObject::openSFile(wxWindow* parent) {
 bool SObject::readSFile(wxFileName& SFile) {
   Clean();
   snp_file = SFile;
-  lib_file = SFile;
-  asy_file = SFile;
-  string lib_name = SFile.GetName().ToStdString();
-  // Replace all whitespace in the generated library name with underscores to
-  // ensure a filesystem-friendly base name
-  replace_if(lib_name.begin(), lib_name.end(), ::isspace, '_');
-  lib_file.SetName(lib_name);
-  lib_file.SetExt("inc");
-  asy_file.SetName(lib_name);
-  asy_file.SetExt("asy");
-#if !defined(NDEBUG)
-  wxString cwd = wxGetCwd();
-#endif
+
+  InitTargetsAndDefaults(SFile);
+
   if (!snp_file.FileExists()) {
     wxString mess = wxString::Format(_("[%s:%d]\nFile '%s' does not exist.\n"
                                        "Current working directory: '%s'"),
                                      __FILE__, __LINE__, snp_file.GetFullPath(),
                                      wxGetCwd());
-#if 0
-      DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
-#endif
     return HandleMessage(mess, be_quiet);
   }
-  inputFormat = "MAG";  // default mag/angle
-  fUnits = 1e9;         // default GHz
-  parameterType = "S";
-  numPorts = 2;  // default to 2 ports
-  Z0 = 50;
-  bool Trigger = false;
-  bool V2 = false;
-  Ver = 1.0;  // Assume version 1.0 until we see otherwise
+
+  bool v2 = false;
+  if (!DeterminePortsAndVersionFromExt(v2)) {
+    return false;
+  }
 
   {
     wxFileInputStream input_stream(snp_file.GetFullPath());
@@ -121,174 +105,21 @@ bool SObject::readSFile(wxFileName& SFile) {
       wxString mess =
           wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__,
                            __LINE__, snp_file.GetFullPath());
-#if 0
-        DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
-#endif
       return HandleMessage(mess, be_quiet);
-    }
-    // the numbers in the extension tell us the number of ports
-    string ext = snp_file.GetExt().ToStdString();
-    if (ext == "ts" || ext == "TS") {
-      V2 = true;
-    }
-    if (!V2) {
-      string strPorts;
-      for (auto i : ext) {
-        if (isdigit(i)) strPorts += i;
-        if ((strPorts.length() > 0) && !(isdigit(i))) break;
-      }
-      numPorts = stoi(strPorts);
     }
     wxTextInputStream text_input(input_stream);
-    wxString line;
-    comment_strings.Empty();
-    option_string.Clear();
-    data_strings.clear();
-    // Parse the file
-    while (!text_input.GetInputStream().Eof()) {
-      line.Empty();
-      line = text_input.ReadLine();
-      line.Trim();
-      line.Trim(wxFalse);
-      if (line.StartsWith("!"))
-        comment_strings.push_back(line);
-      else if (line.StartsWith(";"))
-        comment_strings.push_back(line);
-      else if (line.StartsWith("*"))
-        comment_strings.push_back(line);
-      else if (line.StartsWith("#")) {
-        option_string = line.MakeUpper();
-        if (Ver < 2.0) Trigger = true;
-      } else if (line.StartsWith("[Version]")) {
-        line.AfterFirst(']').Trim().ToDouble(&Ver);
-      } else if (line.StartsWith("[Number of Ports]"))
-        line.AfterFirst(']').Trim().ToInt(&numPorts);
-      else if (line.StartsWith("[Number of Frequencies]"))
-        line.AfterFirst(']').Trim().ToInt(&numFreq);
-      else if (line.StartsWith("[Network Data]")) {
-        if (Ver >= 2.0) {
-          Trigger = true;
-        }
-      } else if (line.StartsWith("[Noise Data]")) {
-        if (Ver >= 2.0) {
-          // Stop reading data when we hit noise data
-          Trigger = false;
-        }
-      } else if (line.StartsWith("[End]")) {
-        if (Ver >= 2.0) {
-          // Stop reading data when we hit [End]
-          Trigger = false;
-        }
-      } else if (line.StartsWith("[Number of Noise Frequencies]"))
-        // Ignore noise data
-        continue;
-      else if (line.StartsWith("[Reference]")) {
-        // Store reference impedances
-        wxArrayString references(wxStringTokenize(
-            line.AfterFirst(']'), wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
-        if (references.GetCount() < 1) {
-          wxString mess =
-              wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
-                                 "'%s'. [Reference] Wrong number of ports"),
-                               __FILE__, __LINE__, snp_file.GetFullPath());
-          return HandleMessage(mess, be_quiet);
-        }
-        double Zref;
-        bool ok = references[0].ToDouble(&Zref);
-        if (!ok) {
-          wxString mess = wxString::Format(
-              _("%s:%d SOjbect::readSFile:Cannot process file "
-                "'%s'. [%s] Not a number"),
-              __FILE__, __LINE__, snp_file.GetFullPath(), references[0]);
-          return HandleMessage(mess, be_quiet);
-        }
-        Ref = std::vector<double>(numPorts, Zref);
-        if (references.GetCount() == numPorts) {
-          for (size_t i = 0; i < references.GetCount(); i++) {
-            ok = references[i].ToDouble(&Zref);
-            if (!ok) {
-              wxString mess = wxString::Format(
-                  _("%s:%d SOjbect::readSFile:Cannot process file "
-                    "'%s'. [%s] Not a number"),
-                  __FILE__, __LINE__, snp_file.GetFullPath(), references[i]);
-              return HandleMessage(mess, be_quiet);
-            }
-            Ref[i] = Zref;
-          }
-        }
-      } else if (line.StartsWith("[Two-Port Data Order]")) {
-        // Only used for 2 port files
-        numPorts = 2;
-        // S21 and S12 are swapped in V1.0 files
-        // In V2.0 files they are specified with a certain order
-        if (line.AfterFirst(']').Trim().Trim(wxFalse).StartsWith("12_21"))
-          Swap = false;  // Do not swap S21 and S12
-      } else if (line.StartsWith("[Matrix Format]")) {
-        // Only Full is supported
-        wxString matrix_format_str = line.AfterFirst(']').Trim().Trim(wxFalse);
-        if (!(matrix_format_str.StartsWith("Full"))) {
-          wxString mess =
-              wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
-                                 "'%s'. [Matrix Format] Unknown"),
-                               __FILE__, __LINE__, snp_file.GetFullPath());
-          return HandleMessage(mess, be_quiet);
-        }
-      } else if (line.StartsWith("[Mixed Mode Order]")) {
-        // Mixed mode not supported
-        wxString mess =
-            wxString::Format(_("%s:%d SOjbect::readSFile:Cannot Process file "
-                               "'%s'.[Mixed Mode Order] Not supported"),
-                             __FILE__, __LINE__, snp_file.GetFullPath());
-        return HandleMessage(mess, be_quiet);
-      } else if (Trigger) {
-        // Read data lines
-        data_strings.append(line.ToStdString());
-        data_strings.append(" ");
-      }
-    }
-    if (data_strings.length() < 2) {
-      wxString mess = wxString::Format(
-          _("%s:%d SOjbect::readSFile:Cannot process file '%s'."), __FILE__,
-          __LINE__, snp_file.GetFullPath());
-      return HandleMessage(mess, be_quiet);
-    }
-    wxArrayString options(
-        wxStringTokenize(option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
-    for (size_t i = 1; i < options.GetCount(); i++) {
-      if (options[i].Matches("GHZ"))
-        fUnits = 1e9;
-      else if (options[i].Matches("MHZ"))
-        fUnits = 1e6;
-      else if (options[i].Matches("KHZ"))
-        fUnits = 1e3;
-      else if (options[i].Matches("HZ"))
-        fUnits = 1;
-      else if (options[i].Matches("S"))
-        parameterType = options[i].ToStdString();
-      else if (options[i].Matches("Y"))
-        parameterType = options[i].ToStdString();
-      else if (options[i].Matches("Z"))
-        parameterType = options[i].ToStdString();
-      else if (options[i].Matches("H"))
-        parameterType = options[i].ToStdString();
-      else if (options[i].Matches("G"))
-        parameterType = options[i].ToStdString();
-      else if (options[i].StartsWith("DB"))
-        inputFormat = "DB";
-      else if (options[i].StartsWith("MA"))
-        inputFormat = "MAG";
-      else if (options[i].StartsWith("RI"))
-        inputFormat = "R_I";
-      else if (options[i].Matches("R"))
-        options[i + 1].ToDouble(&Z0);
+    if (!ParseTouchstone(text_input, v2)) {
+      return false;
     }
   }
-  if (numPorts < 1 || numPorts > 90) {
-    wxString mess =
-        wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
-                         __FILE__, __LINE__, snp_file.GetFullPath());
-    return HandleMessage(mess, be_quiet);
+
+  if (!ParseOptionsFromHeader()) {
+    return false;
   }
+  if (!ValidateAfterParse()) {
+    return false;
+  }
+
   if (Convert2S()) {
     data_saved = true;
     data_strings.clear();
@@ -297,6 +128,230 @@ bool SObject::readSFile(wxFileName& SFile) {
     data_saved = false;
     return false;
   }
+}
+
+void SObject::InitTargetsAndDefaults(const wxFileName& SFile) {
+  lib_file = SFile;
+  asy_file = SFile;
+  string lib_name = SFile.GetName().ToStdString();
+  replace_if(lib_name.begin(), lib_name.end(), ::isspace, '_'); // keep original behavior
+  lib_file.SetName(lib_name);
+  lib_file.SetExt("inc");
+  asy_file.SetName(lib_name);
+  asy_file.SetExt("asy");
+
+  // Defaults (match original)
+  inputFormat = "MAG";   // default mag/angle
+  fUnits = 1e9;          // default GHz
+  parameterType = "S";
+  numPorts = 2;          // default to 2 ports (may be overridden)
+  Z0 = 50;
+  Ver = 1.0;             // Assume version 1.0 until found otherwise
+  Swap = true;           // 2-port swap default for V1
+  comment_strings.Empty();
+  option_string.Clear();
+  data_strings.clear();
+  error = false;
+}
+
+bool SObject::DeterminePortsAndVersionFromExt(bool& v2) {
+  string ext = snp_file.GetExt().ToStdString();
+  if (ext == "ts" || ext == "TS") {
+    v2 = true;
+    return true;
+  }
+  // V1.x: infer port count from digits at start of extension (e.g., s2p, s4p)
+  string strPorts;
+  for (auto ch : ext) {
+    if (isdigit(static_cast<unsigned char>(ch))) strPorts += ch;
+    if (!strPorts.empty() && !isdigit(static_cast<unsigned char>(ch))) break;
+  }
+  if (!strPorts.empty()) {
+    try {
+      numPorts = stoi(strPorts);
+      v2 = false;
+      return true;
+    } catch (...) {
+      // fall through to error
+    }
+  }
+  wxString mess =
+      wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+                       __FILE__, __LINE__, snp_file.GetFullPath());
+  return HandleMessage(mess, be_quiet);
+}
+
+bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
+  bool Trigger = false;
+  // re-init containers just in case
+  comment_strings.Empty();
+  option_string.Clear();
+  data_strings.clear();
+
+  wxString line;
+  while (!text_input.GetInputStream().Eof()) {
+    line.Empty();
+    line = text_input.ReadLine();
+    line.Trim();
+    line.Trim(wxFalse);
+
+    if (line.StartsWith("!") || line.StartsWith(";") || line.StartsWith("*")) {
+      comment_strings.push_back(line);
+      continue;
+    }
+    if (line.StartsWith("#")) {
+      option_string = line.MakeUpper();
+      if (Ver < 2.0) Trigger = true;
+      continue;
+    }
+    if (line.StartsWith("[Version]")) {
+      line.AfterFirst(']').Trim().ToDouble(&Ver);
+      continue;
+    }
+    if (line.StartsWith("[Number of Ports]")) {
+      line.AfterFirst(']').Trim().ToInt(&numPorts);
+      continue;
+    }
+    if (line.StartsWith("[Number of Frequencies]")) {
+      line.AfterFirst(']').Trim().ToInt(&numFreq);
+      continue;
+    }
+    if (line.StartsWith("[Network Data]")) {
+      if (Ver >= 2.0) {
+        Trigger = true;
+      }
+      continue;
+    }
+    if (line.StartsWith("[Noise Data]")) {
+      if (Ver >= 2.0) {
+        Trigger = false; // stop at noise in V2
+      }
+      continue;
+    }
+    if (line.StartsWith("[End]")) {
+      if (Ver >= 2.0) {
+        Trigger = false; // stop at end in V2
+      }
+      continue;
+    }
+    if (line.StartsWith("[Number of Noise Frequencies]")) {
+      continue; // ignore
+    }
+    if (line.StartsWith("[Reference]")) {
+      wxArrayString references(wxStringTokenize(
+          line.AfterFirst(']'), wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
+      if (references.GetCount() < 1) {
+        wxString mess =
+            wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
+                               "'%s'. [Reference] Wrong number of ports"),
+                             __FILE__, __LINE__, snp_file.GetFullPath());
+        return HandleMessage(mess, be_quiet);
+      }
+      double Zref;
+      bool ok = references[0].ToDouble(&Zref);
+      if (!ok) {
+        wxString mess = wxString::Format(
+            _("%s:%d SOjbect::readSFile:Cannot process file "
+              "'%s'. [%s] Not a number"),
+            __FILE__, __LINE__, snp_file.GetFullPath(), references[0]);
+        return HandleMessage(mess, be_quiet);
+      }
+      Ref = std::vector<double>(numPorts, Zref);
+      if (references.GetCount() == numPorts) {
+        for (size_t i = 0; i < references.GetCount(); i++) {
+          ok = references[i].ToDouble(&Zref);
+          if (!ok) {
+            wxString mess = wxString::Format(
+                _("%s:%d SOjbect::readSFile:Cannot process file "
+                  "'%s'. [%s] Not a number"),
+                __FILE__, __LINE__, snp_file.GetFullPath(), references[i]);
+            return HandleMessage(mess, be_quiet);
+          }
+          Ref[i] = Zref;
+        }
+      }
+      continue;
+    }
+    if (line.StartsWith("[Two-Port Data Order]")) {
+      numPorts = 2;
+      if (line.AfterFirst(']').Trim().Trim(wxFalse).StartsWith("12_21")) {
+        Swap = false; // Do not swap S21 and S12
+      }
+      continue;
+    }
+    if (line.StartsWith("[Matrix Format]")) {
+      wxString matrix_format_str = line.AfterFirst(']').Trim().Trim(wxFalse);
+      if (!(matrix_format_str.StartsWith("Full"))) {
+        wxString mess =
+            wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
+                               "'%s'. [Matrix Format] Unknown"),
+                             __FILE__, __LINE__, snp_file.GetFullPath());
+        return HandleMessage(mess, be_quiet);
+      }
+      continue;
+    }
+    if (line.StartsWith("[Mixed Mode Order]")) {
+      wxString mess =
+          wxString::Format(_("%s:%d SOjbect::readSFile:Cannot Process file "
+                             "'%s'.[Mixed Mode Order] Not supported"),
+                           __FILE__, __LINE__, snp_file.GetFullPath());
+      return HandleMessage(mess, be_quiet);
+    }
+    if (Trigger) {
+      data_strings.append(line.ToStdString());
+      data_strings.append(" ");
+    }
+  }
+
+  if (data_strings.length() < 2) {
+    wxString mess = wxString::Format(
+        _("%s:%d SOjbect::readSFile:Cannot process file '%s'."), __FILE__,
+        __LINE__, snp_file.GetFullPath());
+    return HandleMessage(mess, be_quiet);
+  }
+  return true;
+}
+
+bool SObject::ParseOptionsFromHeader() {
+  wxArrayString options(
+      wxStringTokenize(option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
+  for (size_t i = 1; i < options.GetCount(); i++) {
+    if (options[i].Matches("GHZ"))
+      fUnits = 1e9;
+    else if (options[i].Matches("MHZ"))
+      fUnits = 1e6;
+    else if (options[i].Matches("KHZ"))
+      fUnits = 1e3;
+    else if (options[i].Matches("HZ"))
+      fUnits = 1;
+    else if (options[i].Matches("S") || options[i].Matches("Y") ||
+             options[i].Matches("Z") || options[i].Matches("H") ||
+             options[i].Matches("G"))
+      parameterType = options[i].ToStdString();
+    else if (options[i].StartsWith("DB"))
+      inputFormat = "DB";
+    else if (options[i].StartsWith("MA"))
+      inputFormat = "MAG";
+    else if (options[i].StartsWith("RI"))
+      inputFormat = "R_I";
+    else if (options[i].Matches("R")) {
+      // guard against out-of-range
+      if (i + 1 < options.GetCount()) {
+        options[i + 1].ToDouble(&Z0);
+      }
+    }
+  }
+  return true;
+}
+
+bool SObject::ValidateAfterParse() const {
+  if (numPorts < 1 || numPorts > 90) {
+    wxString mess =
+        wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+                         __FILE__, __LINE__, snp_file.GetFullPath());
+    HandleMessage(mess, be_quiet);
+  }
+  return true;
 }
 
 bool SObject::writeLibFile(wxWindow* parent) {
