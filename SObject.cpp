@@ -83,6 +83,7 @@ SObject::SObject() {
   Z0 = 50;
   be_quiet = false;
   error = false;
+  // Assume V1.0 until we see otherwise
   Swap = true;
 }
 
@@ -240,8 +241,10 @@ bool SObject::readSFile(wxFileName& SFile) {
       } else if (line.StartsWith("[Two-Port Data Order]")) {
         // Only used for 2 port files
         numPorts = 2;
-        if (line.AfterFirst(']').Trim().Trim(wxFalse).StartsWith("21_12"))
-          Swap = false;
+        // S21 and S12 are swapped in V1.0 files
+        // In V2.0 files they are specified with a certain order
+        if (line.AfterFirst(']').Trim().Trim(wxFalse).StartsWith("12_21"))
+          Swap = false;  // Do not swap S21 and S12
       } else if (line.StartsWith("[Matrix Format]")) {
         // Only Full is supported
         wxString matrix_format_str = line.AfterFirst(']').Trim().Trim(wxFalse);
