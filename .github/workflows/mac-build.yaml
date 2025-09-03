@@ -1,0 +1,38 @@
+name: macOS Build (Cocoa)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew upgrade
+          brew install wxwidgets ninja
+
+      - name: Configure CMake
+        run: |
+          mkdir -p build
+          cd build
+          WX_CONFIG="$(brew --prefix wxwidgets)/bin/wx-config"
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DwxWidgets_CONFIG_EXECUTABLE="$WX_CONFIG"
+
+      - name: Build
+        run: |
+          cmake --build build --config Release
+
+      - name: Run s2spice (CLI)
+        run: |
+          ./build/s2spice -q -l -s Test/AD6PS-1+___+25.S7P

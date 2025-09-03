@@ -30,14 +30,23 @@
 #pragma once
 #endif
 
+#include <wx/wxprec.h>
+#ifndef WX_PRECOMP
+#include <wx/wx.h>
+#endif /* WX_PRECOMP */
+#include <wx/filename.h>
+
+#include <sstream>
+#include <iostream>
+#include <utility>
+
 #if defined(__WINDOWS__)
 // Enable leak detection under windows
 // For Linux use valgrind or other leak detection tool
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
 #include <crtdbg.h>
 
-#if  defined(NDEBUG)
+#if defined(NDEBUG)
 #define DBG_NEW new
 #else
 #define DBG_NEW new (_NORMAL_BLOCK, __FILE__, __LINE__)
@@ -76,8 +85,19 @@ using namespace Eigen;
   }
 #endif
 #else
-#define DEBUG_MESSAGE_BOX(MESS) {}
+#define DEBUG_MESSAGE_BOX(MESS) \
+  {                             \
+  }
 #endif
+
+inline bool HandleMessage(const wxString& mess, bool be_quiet) {
+  if (be_quiet) {
+    std::cout << mess << std::endl;
+  } else {
+    wxLogError(mess);
+  }
+  return false;
+}
 
 class Sparam {
 public:
@@ -108,8 +128,7 @@ public:
   }
   Sparam(const Sparam& _s) : Freq(_s.Freq), dB(_s.dB), Phase(_s.Phase) {}
   Sparam& operator=(const Sparam& _s) {
-    if (&_s == this)
-      return *this;
+    if (&_s == this) return *this;
     Freq = _s.Freq;
     dB = _s.dB;
     Phase = _s.Phase;
@@ -150,7 +169,7 @@ public:
   int nPorts(void) { return numPorts; }
   int nFreq(void) { return SData.size(); }
   double fBegin(void) { return SData.begin()->Freq; }
-  double fEnd(void) { return (SData.end()-1)->Freq; }
+  double fEnd(void) { return (SData.end() - 1)->Freq; }
   bool dataSaved(void) { return (SData.empty() || data_saved); }
   bool SetQuiet(bool flag) {
     bool res = be_quiet;
@@ -167,7 +186,7 @@ public:
   wxFileName getSNPfile() { return snp_file; }
   wxFileName getASYfile() { return asy_file; }
   wxFileName getLIBfile() { return lib_file; }
-  
+
   // Data processors
   bool openSFile(wxWindow* parent);
   bool readSFile(wxFileName& fileName);
@@ -175,7 +194,7 @@ public:
   bool writeSymFile(wxWindow* parent);
   bool WriteASY();
   bool WriteLIB();
-  
+
   // Clean out the object and prep to import another
   void Clean();
 
@@ -185,19 +204,21 @@ private:
   wxArrayString comment_strings;  // String array of comments from SnP file
   bool data_saved;                // have we saved in imported S-parameter file
   bool be_quiet;
-  bool force;           // force overwrite of files without complaining
+  bool force;  // force overwrite of files without complaining
   bool error;
-  int numPorts;         // number of ports in this file (comes from file name)
+  int numPorts;  // number of ports in this file (comes from file name)
+  bool Swap;
   wxFileName snp_file;  // file that is currently loaded
   wxFileName asy_file;
   wxFileName lib_file;
   double fUnits;           // frequency units
   double Z0;               // reference Z
-  string inputFormat;         // data format (DB, MA or RI)
-  string parameterType;      // type of parameter (S is the only allowed type)
+  vector<double> Ref;      // reference impedance for each port
+  int numFreq;             // number of frequency points
+  int Ver;                 // S-parameter file version
+  string inputFormat;      // data format (DB, MA or RI)
+  string parameterType;    // type of parameter (S is the only allowed type)
   wxString option_string;  // meta data strings
-  // This function reads the contents of the file into a vector of points
-  vector<pair<double, double>> ReadFile(const string& fileName);
 
   // These functions create a string list describing a LTspice symbol
   list<string> Symbol(const string& symname) const;

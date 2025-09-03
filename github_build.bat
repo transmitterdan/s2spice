@@ -27,8 +27,7 @@ mkdir build && cd build
 
 @echo "Configuring:"
 cmake -T v143 ^
-    -DCMAKE_GENERATOR_PLATFORM=Win32 ^
-    -A Win32 -G "Visual Studio 17 2022" ^
+    -A x64 -G "Visual Studio 17 2022" ^
     -DwxWidgets_ROOT_DIR=%wxWidgets_ROOT_DIR% ^
     -DwxWidgets_LIB_DIR=%wxWidgets_LIB_DIR% ^
     -DwxWidgets_CONFIGURATION=mswu ^

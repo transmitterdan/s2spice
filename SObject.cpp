@@ -25,27 +25,13 @@
  *
  ***************************************************************************/
 
-#include <wx/wxprec.h>
-#ifndef WX_PRECOMP
-#include <wx/wx.h>
-#endif /* WX_PRECOMP */
-#include <wx/wfstream.h>
-#include <wx/txtstrm.h>
-#include <wx/filename.h>
-#include <wx/tokenzr.h>
-
-#include <sstream>
-#include <iostream>
-#include <fstream>
-#include <utility>
-#include <complex>
-#include <algorithm>
-#include <cstdio>
-
-using namespace std;
-
 #include "SObject.h"
 #include "stringformat.hpp"
+#include <wx/tokenzr.h>
+#include <fstream>
+#include <complex>
+#include <algorithm>
+#include <cctype>
 
 /*
 The formula for converting H-parameters to S-parameters for an arbitrary number
@@ -97,6 +83,7 @@ SObject::SObject() {
   Z0 = 50;
   be_quiet = false;
   error = false;
+  Swap = true;
 }
 
 SObject::~SObject() { Clean(); }
@@ -110,11 +97,13 @@ void SObject::Clean() {
 
 bool SObject::openSFile(wxWindow* parent) {
 #if defined(_WIN32) || defined(_WIN64)
-  char const* WildcardStr = "S paramter (*.snp)|*.S?P;*.S??P|H paramter (*.hnp)|*.H?P;H??P|All files (*.*)|*.*";
+  char const* WildcardStr =
+      "Touchstone S|*.S?P;*.S??P;*.TS|H paramter (*.hnp)|*.H?P;H??P|All files "
+      "(*.*)|*.*";
 #else
   // On non-Windows platforms we try to find mostly snp files but
   // they don't all allow ? as a wildcard
-  char const* WildcardStr = "S paramter (*p)|*p;*P|All files (*)|*";
+  char const* WildcardStr = "Touchstone S|*p;*P;*ts;*TS|All files (*)|*";
 #endif
   if (!dataSaved()) {
     if (wxMessageBox(
@@ -152,16 +141,19 @@ bool SObject::readSFile(wxFileName& SFile) {
                                        "Current working directory: '%s'"),
                                      __FILE__, __LINE__, snp_file.GetFullPath(),
                                      wxGetCwd());
-    #if 0
+#if 0
       DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
-    #endif
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
+#endif
+    return HandleMessage(mess, be_quiet);
   }
+  inputFormat = "MAG";  // default mag/angle
+  fUnits = 1e9;         // default GHz
+  parameterType = "S";
+  numPorts = 2;  // default to 2 ports
+  Z0 = 50;
+  bool Trigger = false;
+  bool V2 = false;
+  Ver = 10;  // Assume version 1.0 until we see otherwise
 
   {
     wxFileInputStream input_stream(snp_file.GetFullPath());
@@ -169,34 +161,23 @@ bool SObject::readSFile(wxFileName& SFile) {
       wxString mess =
           wxString::Format(_("%s:%d Cannot open file '%s'."), __FILE__,
                            __LINE__, snp_file.GetFullPath());
-      #if 0
+#if 0
         DEBUG_MESSAGE_BOX(wxString::Format(_("Flag be_quiet = %d."), be_quiet))
-      #endif
-      if (be_quiet) {
-        cout << mess << endl;
-      } else {
-        wxLogError(mess);
-      }
-      return false;
+#endif
+      return HandleMessage(mess, be_quiet);
     }
     // the numbers in the extension tell us the number of ports
     string ext = snp_file.GetExt().ToStdString();
-    string strPorts;
-    for (auto i : ext) {
-      if (isdigit(i)) strPorts += i;
-      if ((strPorts.length() > 0) && !(isdigit(i))) break;
+    if (ext == "ts" || ext == "TS") {
+      V2 = true;
     }
-    numPorts = stoi(strPorts);
-    if (numPorts < 1 || numPorts > 90) {
-      wxString mess =
-          wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
-                           __FILE__, __LINE__, snp_file.GetFullPath());
-      if (be_quiet) {
-        cout << mess << endl;
-      } else {
-        wxLogError(mess);
+    if (!V2) {
+      string strPorts;
+      for (auto i : ext) {
+        if (isdigit(i)) strPorts += i;
+        if ((strPorts.length() > 0) && !(isdigit(i))) break;
       }
-      return false;
+      numPorts = stoi(strPorts);
     }
     wxTextInputStream text_input(input_stream);
     wxString line;
@@ -214,20 +195,85 @@ bool SObject::readSFile(wxFileName& SFile) {
         comment_strings.push_back(line);
       else if (line.StartsWith("*"))
         comment_strings.push_back(line);
-      else if (line.StartsWith("#"))
+      else if (line.StartsWith("#")) {
         option_string = line.MakeUpper();
-      else {
+        if (Ver < 20) Trigger = true;
+      } else if (line.StartsWith("[Version]")) {
+        line.AfterFirst(']').Trim().ToInt(&Ver);  // should be 2.0
+        Ver = Ver * 10;
+      } else if (line.StartsWith("[Number of Ports]"))
+        line.AfterFirst(']').Trim().ToInt(&numPorts);
+      else if (line.StartsWith("[Number of Frequencies]"))
+        line.AfterFirst(']').Trim().ToInt(&numFreq);
+      else if (line.StartsWith("[Network Data]")) {
+        if (Ver >= 20) {
+          Trigger = true;
+        }
+      } else if (line.StartsWith("[Noise Data]")) {
+        if (Ver >= 20) {
+          // Stop reading data when we hit noise data
+          Trigger = false;
+        }
+      } else if (line.StartsWith("[End]"))
+        // Stop reading data when we hit [End]
+        Trigger = false;
+      else if (line.StartsWith("[Number of Noise Frequencies]"))
+        // Ignore noise data
+        continue;
+      else if (line.StartsWith("[Reference]")) {
+        // Store reference impedances
+        wxArrayString references(wxStringTokenize(
+            line.AfterFirst(']'), wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
+        if (references.GetCount() < 1) {
+          wxString mess =
+              wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
+                                 "'%s'. [Reference] Wrong number of ports"),
+                               __FILE__, __LINE__, snp_file.GetFullPath());
+          return HandleMessage(mess, be_quiet);
+        }
+        Ref = std::vector<double>(numPorts, std::atof(references[0]));
+        if (references.GetCount() == numPorts) {
+          for (size_t i = 0; i < references.GetCount(); i++) {
+            Ref[i] = std::atof(references[i]);
+          }
+        }
+      } else if (line.StartsWith("[Two-Port Data Order]")) {
+        // Only used for 2 port files
+        numPorts = 2;
+        if (line.AfterFirst(']').Trim().Trim(wxFalse).StartsWith("21_12"))
+          Swap = false;
+      } else if (line.StartsWith("[Matrix Format]")) {
+        // Only Full is supported
+        wxString matrix_format_str = line.AfterFirst(']').Trim().Trim(wxFalse);
+        if (!(matrix_format_str.StartsWith("Full"))) {
+          wxString mess =
+              wxString::Format(_("%s:%d SOjbect::readSFile:Cannot process file "
+                                 "'%s'. [Matrix Format] Unknown"),
+                               __FILE__, __LINE__, snp_file.GetFullPath());
+          return HandleMessage(mess, be_quiet);
+        }
+      } else if (line.StartsWith("[Mixed Mode Order]")) {
+        // Mixed mode not supported
+        wxString mess =
+            wxString::Format(_("%s:%d SOjbect::readSFile:Cannot Process file "
+                               "'%s'.[Mixed Mode Order] Not supported"),
+                             __FILE__, __LINE__, snp_file.GetFullPath());
+        return HandleMessage(mess, be_quiet);
+      } else if (Trigger) {
+        // Read data lines
         data_strings.append(line.ToStdString());
         data_strings.append(" ");
       }
     }
-    inputFormat = "MAG";  // default mag/angle
-    fUnits = 1e9;
-    parameterType = "S";
-    Z0 = 50;
-    wxArrayString options(wxStringTokenize(
-        option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
-    for (size_t i = 0; i < options.GetCount(); i++) {
+    if (data_strings.length() < 2) {
+      wxString mess = wxString::Format(
+          _("%s:%d SOjbect::readSFile:Cannot process file '%s'."), __FILE__,
+          __LINE__, snp_file.GetFullPath());
+      return HandleMessage(mess, be_quiet);
+    }
+    wxArrayString options(
+        wxStringTokenize(option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
+    for (size_t i = 1; i < options.GetCount(); i++) {
       if (options[i].Matches("GHZ"))
         fUnits = 1e9;
       else if (options[i].Matches("MHZ"))
@@ -256,13 +302,20 @@ bool SObject::readSFile(wxFileName& SFile) {
         options[i + 1].ToDouble(&Z0);
     }
   }
-  if (!Convert2S()) {
+  if (numPorts < 1 || numPorts > 90) {
+    wxString mess =
+        wxString::Format(_("%s:%d SOjbect::readSFile:Cannot read file '%s'."),
+                         __FILE__, __LINE__, snp_file.GetFullPath());
+    return HandleMessage(mess, be_quiet);
+  }
+  if (Convert2S()) {
     data_saved = true;
     data_strings.clear();
+    return true;
+  } else {
+    data_saved = false;
     return false;
   }
-  data_saved = false;
-  return !error;
 }
 
 bool SObject::writeLibFile(wxWindow* parent) {
@@ -296,12 +349,8 @@ void SObject::Convert2Input(double& A, double& B) {
     wxString mess = wxString::Format(
         _("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
         __FILE__, __LINE__, wxString(parameterType));
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
     error = true;
+    HandleMessage(mess, be_quiet);
   }
 }
 
@@ -309,28 +358,18 @@ bool SObject::WriteLIB() {
   string libName(lib_file.GetFullPath().ToStdString());
   int npMult = 100;
   if (parameterType.compare("S") != 0) {
-    wxString mess =
-      wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
-                       __FILE__, __LINE__, wxString(parameterType));
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
+    wxString mess = wxString::Format(
+        _("%s:%d SOjbect::WriteLIB:Cannot handle %s format data file."),
+        __FILE__, __LINE__, wxString(parameterType));
+    return HandleMessage(mess, be_quiet);
   }
-	  
+
   ofstream output_stream(libName);
   if (!output_stream) {
     wxString mess =
         wxString::Format(_("%s:%d SOjbect::WriteLIB:Cannot create file '%s'."),
                          __FILE__, __LINE__, libName);
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
+    return HandleMessage(mess, be_quiet);
   }
   output_stream << ".SUBCKT " << lib_file.GetName() << " ";
   for (int i = 0; i < numPorts + 1; i++) output_stream << " " << i + 1;
@@ -356,20 +395,20 @@ bool SObject::WriteLIB() {
     output_stream << stringFormat("R%dN %d %d %e\n", i + 1, i + 1,
                                   npMult * (i + 1), -Z0);
     output_stream << stringFormat("R%dP %d %d %f\n", i + 1, npMult * (i + 1),
-                                  numPorts+1, 2 * Z0);
+                                  numPorts + 1, 2 * Z0);
   }
 
   output_stream << "\n";
   for (int i = 0; i < numPorts; i++) {
     for (int j = 0; j < numPorts; j++) {
-      output_stream << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1, inputFormat);
+      output_stream << stringFormat("* S%d%d FREQ %s\n ", i + 1, j + 1,
+                                    inputFormat);
       output_stream << stringFormat(
-          "G%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1,
-          numPorts+1, npMult * (i + 1),
-          npMult * (j + 1), numPorts + 1, inputFormat);
+          "G%02d%02d %d %d FREQ {V(%d,%d)}= %s\n", i + 1, j + 1, numPorts + 1,
+          npMult * (i + 1), npMult * (j + 1), numPorts + 1, inputFormat);
       for (auto s = SData.begin(); s != SData.end(); s++) {
         double A = s->dB(i, j);
-        A = A - 20 * log10(2*Z0);
+        A = A - 20 * log10(2 * Z0);
         double B = s->Phase(i, j);
         Convert2Input(A, B);
         output_stream << stringFormat("+(%14eHz,%14e,%14e)\n", s->Freq, A, B);
@@ -400,12 +439,7 @@ bool SObject::WriteASY() {
     wxString mess = wxString::Format(
         _("%s:%d No data. Please open SnP file and make LIB first."), __FILE__,
         __LINE__);
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
+    return HandleMessage(mess, be_quiet);
   }
 
   list<string> sym;
@@ -415,12 +449,7 @@ bool SObject::WriteASY() {
   if (sym.empty()) {
     wxString mess = wxString::Format(_("%s:%d Error creating symbol '%s'."),
                                      __FILE__, __LINE__, asy_file.GetName());
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
+    return HandleMessage(mess, be_quiet);
   }
 
   string symName(asy_file.GetFullPath().ToStdString());
@@ -428,12 +457,7 @@ bool SObject::WriteASY() {
   if (!output_stream) {
     wxString mess = wxString::Format(_("%s:%d Cannot create file '%s'."),
                                      __FILE__, __LINE__, symName);
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogError(mess);
-    }
-    return false;
+    return HandleMessage(mess, be_quiet);
   }
   for (auto i = sym.begin(); i != sym.end(); i++) {
     output_stream << *i << "\n";
@@ -463,29 +487,22 @@ bool SObject::Convert2S() {
       wxString mess = wxString::Format(
           "%s:%d WARNING: %s contains invalid non-numeric characters", __FILE__,
           __LINE__, snp_file.GetFullPath());
-      if (be_quiet) {
-        cout << mess << endl;
-      } else {
-        wxLogWarning(mess);
-      }
+      return HandleMessage(mess, be_quiet);
     }
   }
 
   int nFreqs = raw_data.size() / (numPorts * numPorts * 2 + 1);
-  if (nFreqs * (numPorts * numPorts * 2 + 1) != raw_data.size()) {
+  if ((nFreqs * (numPorts * numPorts * 2 + 1) != raw_data.size()) ||
+      ((nFreqs != numFreq) && (Ver >= 20))) {
     // Maybe the file has an incomplete last frequency.  If not, it will reveal
     // itself later on because frequency will be non-monotonic and then fail
     wxString mess =
         wxString::Format(_("%s:%d WARNING: %s contains wrong number of values"),
                          __FILE__, __LINE__, snp_file.GetFullPath());
-    if (be_quiet) {
-      cout << mess << endl;
-    } else {
-      wxLogWarning(mess);
-    }
+    return HandleMessage(mess, be_quiet);
   }
 
-  Sparam S((size_t) numPorts);
+  Sparam S((size_t)numPorts);
   double prevFreq = 0;
   int nFrequencies = 0;
   for (auto rd = raw_data.begin(); rd != raw_data.end();) {
@@ -496,12 +513,7 @@ bool SObject::Convert2S() {
       wxString mess = wxString::Format(
           _("%s:%d ERROR: %s contains decreasing frequency values"), __FILE__,
           __LINE__, snp_file.GetFullPath());
-      if (be_quiet) {
-        cout << mess << endl;
-      } else {
-        wxLogError(mess);
-      }
-      return false;
+      return HandleMessage(mess, be_quiet);
     }
     prevFreq = S.Freq;
 
@@ -528,7 +540,7 @@ bool SObject::Convert2S() {
       // Extract dB from matrix ri
       S.dB = 20.0 * log10(abs(ri.array()));
       // Extract phase in degrees from ri
-      S.Phase = (180 / M_PI ) * ri.cwiseArg();
+      S.Phase = (180 / M_PI) * ri.cwiseArg();
     } else if (inputFormat.compare("DB") == 0) {
       // input == internal form so just copy each value
       for (size_t i = 0; i < numPorts; i++) {
@@ -538,15 +550,10 @@ bool SObject::Convert2S() {
         }
       }
     } else {
-      wxString mess =
-          wxString::Format(_("%s:%d Data format '%s' unsupported in file '%s'."), __FILE__,
-                           __LINE__, wxString(inputFormat), snp_file.GetFullPath());
-      if (be_quiet) {
-        cout << mess << endl;
-      } else {
-        wxLogError(mess);
-      }
-      return false;
+      wxString mess = wxString::Format(
+          _("%s:%d Data format '%s' unsupported in file '%s'."), __FILE__,
+          __LINE__, wxString(inputFormat), snp_file.GetFullPath());
+      return HandleMessage(mess, be_quiet);
     }
 
     // Step 2: Convert from input parameter type H to S
@@ -558,8 +565,8 @@ bool SObject::Convert2S() {
       parameterType = "S";
     }
     // Step 3: Fixup 2-port data locations
-    //         Touchstone treats 2-ports uniquely
-    if (numPorts == 2) {
+    //         Touchstone V1.0 treats 2-ports uniquely
+    if (numPorts == 2 && Swap) {
       std::swap(S.dB(0, 1), S.dB(1, 0));
       std::swap(S.Phase(0, 1), S.Phase(1, 0));
     }

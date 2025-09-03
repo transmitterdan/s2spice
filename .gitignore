@@ -1,8 +1,11 @@
 build
 wxWidgets-3.2.1
+wxWidgets-3.2.8
+wxWidgets-3.3.1
 .vscode
 .vs
 version.h
+configdev.bat
 version.bat
 Test/*.lib
 Test/*.inc

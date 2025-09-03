@@ -1,0 +1,46 @@
+name: Linux Build (Ubuntu)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y libwxgtk3.2-dev cmake g++ make ninja-build
+
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -G Ninja
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+
+    - name: Install Xvfb
+      run: sudo apt-get install -y xvfb dbus-x11
+
+    - name: Start virtual display
+      run: |
+        Xvfb :99 -screen 0 1920x1080x24 &  # Launch virtual X server
+        echo "DISPLAY=:99" >> $GITHUB_ENV  # Set DISPLAY for subsequent steps
+        echo "NO_AT_BRIDGE=1" >> $GITHUB_ENV    # Turn off accessibility features
+      
+    - name: Run s2spice
+      run: ./build/s2spice -q -l -s Test/AD6PS-1+___+25.S7P
+
