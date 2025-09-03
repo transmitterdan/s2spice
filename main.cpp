@@ -241,7 +241,7 @@ bool MyApp::OnInit() {
 #if wxCHECK_VERSION(3, 3, 0)
     SetErrorExitCode(retCode);
 #endif
-    return true;  // Return no error but do not start GUI
+    return ok;  // Return no error but do not start GUI
   } else {
     SetVendorName("Transmitterdan");
     SetAppName("S2spice");
