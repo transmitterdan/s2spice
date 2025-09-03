@@ -25,7 +25,7 @@
             echo Running "%BIN%" -l -s -q -f "%%F"
             "%BIN%" -l -s -q -f "%%F"
             if not exist "%%~nF.inc" (
-              echo Missing output: %%~nF.lib
+              echo Missing output: %%~nF.inc
              set FAILED=1
             )
             if not exist "%%~nF.asy" (
@@ -39,7 +39,7 @@
             echo Running "%BIN%" -l -s -q "%%F"
             "%BIN%" -l -s -q -f "%%F"
             if not exist "%%~nF.inc" (
-              echo Missing output: %%~nF.lib
+              echo Missing output: %%~nF.inc
              set FAILED=1
             )
             if not exist "%%~nF.asy" (
