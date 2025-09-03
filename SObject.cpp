@@ -33,49 +33,6 @@
 #include <algorithm>
 #include <cctype>
 
-/*
-The formula for converting H-parameters to S-parameters for an arbitrary number
-of ports is as follows:
-
-S = (Z0/Y0) * (I + H) * (I - H)^-1
-
-Where Z0 is the reference impedance, Y0 is the admittance of the reference
-plane, I is the identity matrix, and H is the matrix of H-parameters.
-
-It is important to note that this formula is only applicable to linear,
-time-invariant systems and that the number of ports must be known and consistent
-throughout the conversion.
-
-#include <iostream>
-#include <complex>
-#include <Eigen/Dense>
-
-using namespace std;
-using namespace Eigen;
-
-MatrixXcd h2s(const MatrixXcd& H, double Z0, double Y0) {
-    int n = H.rows(); // get the number of ports
-    // create the identity matrix
-    MatrixXcd I = MatrixXcd::Identity(n, n);
-    // calculate S-parameters
-    MatrixXcd S = (Z0/Y0) * (I + H) * (I - H).inverse();
-    return S;
-}
-
-int main() {
-    // example usage
-    MatrixXcd H(2,2);
-    H << complex<double>(1,2), complex<double>(-3,-4),
-         complex<double>(5,6), complex<double>(-7,-8);
-    double Z0 = 50; // ohms
-    double Y0 = 1/Z0;
-    MatrixXcd S = h2s(H, Z0, Y0);
-    cout << "S-parameters:" << endl << S << endl;
-    return 0;
-}
-
-*/
-
 SObject::SObject() {
   Clean();
   numPorts = 0;
@@ -129,6 +86,8 @@ bool SObject::readSFile(wxFileName& SFile) {
   lib_file = SFile;
   asy_file = SFile;
   string lib_name = SFile.GetName().ToStdString();
+  // Replace all whitespace in the generated library name with underscores to
+  // ensure a filesystem-friendly base name
   replace_if(lib_name.begin(), lib_name.end(), ::isspace, '_');
   lib_file.SetName(lib_name);
   lib_file.SetExt("inc");
@@ -154,7 +113,7 @@ bool SObject::readSFile(wxFileName& SFile) {
   Z0 = 50;
   bool Trigger = false;
   bool V2 = false;
-  Ver = 10;  // Assume version 1.0 until we see otherwise
+  Ver = 1.0;  // Assume version 1.0 until we see otherwise
 
   {
     wxFileInputStream input_stream(snp_file.GetFullPath());
@@ -185,6 +144,7 @@ bool SObject::readSFile(wxFileName& SFile) {
     comment_strings.Empty();
     option_string.Clear();
     data_strings.clear();
+    // Parse the file
     while (!text_input.GetInputStream().Eof()) {
       line.Empty();
       line = text_input.ReadLine();
@@ -198,27 +158,28 @@ bool SObject::readSFile(wxFileName& SFile) {
         comment_strings.push_back(line);
       else if (line.StartsWith("#")) {
         option_string = line.MakeUpper();
-        if (Ver < 20) Trigger = true;
+        if (Ver < 2.0) Trigger = true;
       } else if (line.StartsWith("[Version]")) {
-        line.AfterFirst(']').Trim().ToInt(&Ver);  // should be 2.0
-        Ver = Ver * 10;
+        line.AfterFirst(']').Trim().ToDouble(&Ver);
       } else if (line.StartsWith("[Number of Ports]"))
         line.AfterFirst(']').Trim().ToInt(&numPorts);
       else if (line.StartsWith("[Number of Frequencies]"))
         line.AfterFirst(']').Trim().ToInt(&numFreq);
       else if (line.StartsWith("[Network Data]")) {
-        if (Ver >= 20) {
+        if (Ver >= 2.0) {
           Trigger = true;
         }
       } else if (line.StartsWith("[Noise Data]")) {
-        if (Ver >= 20) {
+        if (Ver >= 2.0) {
           // Stop reading data when we hit noise data
           Trigger = false;
         }
-      } else if (line.StartsWith("[End]"))
-        // Stop reading data when we hit [End]
-        Trigger = false;
-      else if (line.StartsWith("[Number of Noise Frequencies]"))
+      } else if (line.StartsWith("[End]")) {
+        if (Ver >= 2.0) {
+          // Stop reading data when we hit [End]
+          Trigger = false;
+        }
+      } else if (line.StartsWith("[Number of Noise Frequencies]"))
         // Ignore noise data
         continue;
       else if (line.StartsWith("[Reference]")) {
@@ -232,10 +193,27 @@ bool SObject::readSFile(wxFileName& SFile) {
                                __FILE__, __LINE__, snp_file.GetFullPath());
           return HandleMessage(mess, be_quiet);
         }
-        Ref = std::vector<double>(numPorts, std::atof(references[0]));
+        double Zref;
+        bool ok = references[0].ToDouble(&Zref);
+        if (!ok) {
+          wxString mess = wxString::Format(
+              _("%s:%d SOjbect::readSFile:Cannot process file "
+                "'%s'. [%s] Not a number"),
+              __FILE__, __LINE__, snp_file.GetFullPath(), references[0]);
+          return HandleMessage(mess, be_quiet);
+        }
+        Ref = std::vector<double>(numPorts, Zref);
         if (references.GetCount() == numPorts) {
           for (size_t i = 0; i < references.GetCount(); i++) {
-            Ref[i] = std::atof(references[i]);
+            ok = references[i].ToDouble(&Zref);
+            if (!ok) {
+              wxString mess = wxString::Format(
+                  _("%s:%d SOjbect::readSFile:Cannot process file "
+                    "'%s'. [%s] Not a number"),
+                  __FILE__, __LINE__, snp_file.GetFullPath(), references[i]);
+              return HandleMessage(mess, be_quiet);
+            }
+            Ref[i] = Zref;
           }
         }
       } else if (line.StartsWith("[Two-Port Data Order]")) {
