@@ -33,6 +33,6 @@ jobs:
         run: |
           cmake --build build --config Release
 
-      - name: Run s2spice (CLI)
-        run: |
-          ./build/s2spice -q -l -s Test/AD6PS-1+___+25.S7P
+    - name: Run s2spice with a timeout (CLI mode)
+      shell: bash
+      run: timeout 60s ./build/s2spice -q -l -s ./Test/AD6PS-1+___+25.TS
