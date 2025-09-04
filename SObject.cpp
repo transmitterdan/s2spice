@@ -315,6 +315,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
 bool SObject::ParseOptionsFromHeader() {
   wxArrayString options(
       wxStringTokenize(option_string, wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
+  // First token must be "#" so we skip it
   for (size_t i = 1; i < options.GetCount(); i++) {
     if (options[i].Matches("GHZ"))
       fUnits = 1e9;
@@ -350,6 +351,7 @@ bool SObject::ValidateAfterParse() const {
         wxString::Format(_("%s:%d SObject::readSFile:Cannot read file '%s'."),
                          __FILE__, __LINE__, snp_file.GetFullPath());
     HandleMessage(mess, be_quiet);
+    return false;
   }
   return true;
 }
@@ -529,7 +531,7 @@ bool SObject::Convert2S() {
 
   int nFreqs = raw_data.size() / (numPorts * numPorts * 2 + 1);
   if ((nFreqs * (numPorts * numPorts * 2 + 1) != raw_data.size()) ||
-      ((nFreqs != numFreq) && (Ver >= 20))) {
+      ((nFreqs != numFreq) && (Ver >= 2.0))) {
     // Maybe the file has an incomplete last frequency.  If not, it will reveal
     // itself later on because frequency will be non-monotonic and then fail
     wxString mess =
