@@ -94,8 +94,7 @@ bool SObject::readSFile(wxFileName& SFile) {
     return HandleMessage(mess, be_quiet);
   }
 
-  bool v2 = false;
-  if (!DeterminePortsAndVersionFromExt(v2)) {
+  if (!DeterminePortsAndVersionFromExt()) {
     return false;
   }
 
@@ -108,7 +107,7 @@ bool SObject::readSFile(wxFileName& SFile) {
       return HandleMessage(mess, be_quiet);
     }
     wxTextInputStream text_input(input_stream);
-    if (!ParseTouchstone(text_input, v2)) {
+    if (!ParseTouchstone(text_input)) {
       return false;
     }
   }
@@ -154,34 +153,34 @@ void SObject::InitTargetsAndDefaults(const wxFileName& SFile) {
   error = false;
 }
 
-bool SObject::DeterminePortsAndVersionFromExt(bool& v2) {
-  string ext = snp_file.GetExt().ToStdString();
-  if (ext == "ts" || ext == "TS") {
-    v2 = true;
+bool SObject::DeterminePortsAndVersionFromExt() {
+  wxString ext = snp_file.GetExt();
+  if (ext.MakeLower() == "ts") {
+    numPorts = 0;  // must be read from file
     return true;
   }
   // V1.x: infer port count from digits at start of extension (e.g., s2p, s4p)
   string strPorts;
-  for (auto ch : ext) {
-    if (isdigit(static_cast<unsigned char>(ch))) strPorts += ch;
-    if (!strPorts.empty() && !isdigit(static_cast<unsigned char>(ch))) break;
+  size_t beg = ext.find_first_of("123456789");
+  if (beg != string::npos) {
+    size_t last = ext.find_last_of("123456789");
+    strPorts = ext.substr(beg, last - beg + 1).ToStdString();
   }
   if (!strPorts.empty()) {
     try {
       numPorts = stoi(strPorts);
-      v2 = false;
       return true;
     } catch (...) {
       // fall through to error
     }
   }
   wxString mess =
-      wxString::Format(_("%s:%d SObject::readSFile:Cannot read file '%s'."),
+      wxString::Format(_("%s:%d SObject::DeterminePortsAndVersionFromExt:Cannot read file '%s'."),
                        __FILE__, __LINE__, snp_file.GetFullPath());
   return HandleMessage(mess, be_quiet);
 }
 
-bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
+bool SObject::ParseTouchstone(wxTextInputStream& text_input) {
   bool Trigger = false;
   // re-init containers just in case
   comment_strings.Empty();
@@ -242,7 +241,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
           line.AfterFirst(']'), wxDEFAULT_DELIMITERS, wxTOKEN_DEFAULT));
       if (references.GetCount() < 1) {
         wxString mess =
-            wxString::Format(_("%s:%d SObject::readSFile:Cannot process file "
+            wxString::Format(_("%s:%d SObject::ParseTouchstone:Cannot process file "
                                "'%s'. [Reference] Wrong number of ports"),
                              __FILE__, __LINE__, snp_file.GetFullPath());
         return HandleMessage(mess, be_quiet);
@@ -251,7 +250,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
       bool ok = references[0].ToDouble(&Zref);
       if (!ok) {
         wxString mess = wxString::Format(
-            _("%s:%d SObject::readSFile:Cannot process file "
+            _("%s:%d SObject::ParseTouchstone:Cannot process file "
               "'%s'. [%s] Not a number"),
             __FILE__, __LINE__, snp_file.GetFullPath(), references[0]);
         return HandleMessage(mess, be_quiet);
@@ -262,7 +261,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
           ok = references[i].ToDouble(&Zref);
           if (!ok) {
             wxString mess = wxString::Format(
-                _("%s:%d SObject::readSFile:Cannot process file "
+                _("%s:%d SObject::ParseTouchstone:Cannot process file "
                   "'%s'. [%s] Not a number"),
                 __FILE__, __LINE__, snp_file.GetFullPath(), references[i]);
             return HandleMessage(mess, be_quiet);
@@ -283,7 +282,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
       wxString matrix_format_str = line.AfterFirst(']').Trim().Trim(wxFalse);
       if (!(matrix_format_str.StartsWith("Full"))) {
         wxString mess =
-            wxString::Format(_("%s:%d SObject::readSFile:Cannot process file "
+            wxString::Format(_("%s:%d SObject::ParseTouchstone:Cannot process file "
                                "'%s'. [Matrix Format] Unknown"),
                              __FILE__, __LINE__, snp_file.GetFullPath());
         return HandleMessage(mess, be_quiet);
@@ -292,7 +291,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
     }
     if (line.StartsWith("[Mixed Mode Order]")) {
       wxString mess =
-          wxString::Format(_("%s:%d SObject::readSFile:Cannot Process file "
+          wxString::Format(_("%s:%d SObject::ParseTouchstone:Cannot Process file "
                              "'%s'.[Mixed Mode Order] Not supported"),
                            __FILE__, __LINE__, snp_file.GetFullPath());
       return HandleMessage(mess, be_quiet);
@@ -305,7 +304,7 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input, bool v2) {
 
   if (data_strings.length() < 2) {
     wxString mess = wxString::Format(
-        _("%s:%d SObject::readSFile:Cannot process file '%s'."), __FILE__,
+        _("%s:%d SObject::ParseTouchstone:Cannot process file '%s'."), __FILE__,
         __LINE__, snp_file.GetFullPath());
     return HandleMessage(mess, be_quiet);
   }
@@ -348,7 +347,7 @@ bool SObject::ParseOptionsFromHeader() {
 bool SObject::ValidateAfterParse() const {
   if (numPorts < 1 || numPorts > 90) {
     wxString mess =
-        wxString::Format(_("%s:%d SObject::readSFile:Cannot read file '%s'."),
+        wxString::Format(_("%s:%d SObject::ValidateAfterParse:Cannot read file '%s'."),
                          __FILE__, __LINE__, snp_file.GetFullPath());
     HandleMessage(mess, be_quiet);
     return false;
@@ -385,7 +384,7 @@ void SObject::Convert2Input(double& A, double& B) {
     B = phase;
   } else {
     wxString mess = wxString::Format(
-        _("%s:%d SObject::WriteLIB:Cannot handle %s format data file."),
+        _("%s:%d SObject::Convert2Input:Cannot handle %s format data file."),
         __FILE__, __LINE__, wxString(parameterType));
     error = true;
     HandleMessage(mess, be_quiet);
