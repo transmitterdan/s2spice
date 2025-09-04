@@ -324,17 +324,17 @@ MyFrame::MyFrame(const wxString& title, SObject* SD, const wxPoint& pos,
 
   // Create the buttons
   wxButton* openButton = DBG_NEW wxButton(mainPanel, ID_OPEN, _("Open"));
-  buttonRowSizer->Add(openButton, wxALIGN_LEFT);
+  buttonRowSizer->Add(openButton, 0);
 
   wxButton* libButton = DBG_NEW wxButton(mainPanel, ID_MKLIB, _("Save LIB"));
-  buttonRowSizer->Add(libButton, wxALIGN_LEFT);
+  buttonRowSizer->Add(libButton, 0);
 
   wxButton* symButton = DBG_NEW wxButton(mainPanel, ID_MKSYM, _("Save SYM"));
-  buttonRowSizer->Add(symButton, wxALIGN_LEFT);
+  buttonRowSizer->Add(symButton, 0);
 
   wxButton* aboutButton =
       DBG_NEW wxButton(mainPanel, wxID_ABOUT, _("About..."));
-  buttonRowSizer->Add(aboutButton, wxALIGN_LEFT);
+  buttonRowSizer->Add(aboutButton, 0);
   frameSizer->Add(buttonRowSizer);
 
   wxStaticBox* debugStaticBox =
