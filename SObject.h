@@ -203,10 +203,10 @@ private:
   void InitTargetsAndDefaults(const wxFileName& SFile);
 
   // Step 1: decide V2 and (if not V2) numPorts from extension
-  bool DeterminePortsAndVersionFromExt(bool& v2);
+  bool DeterminePortsAndVersionFromExt();
 
   // Step 2: scan lines and collect metadata + raw data strings
-  bool ParseTouchstone(wxTextInputStream& in, bool v2);
+  bool ParseTouchstone(wxTextInputStream& in);
 
   // Step 3: parse the "# ..." header options for units/format/type/Z0
   bool ParseOptionsFromHeader();
