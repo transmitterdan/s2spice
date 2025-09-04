@@ -352,7 +352,7 @@ bool SObject::ParseOptionsFromHeader() {
 bool SObject::ValidateAfterParse() const {
   if (numPorts < 1 || numPorts > 90) {
     wxString mess =
-        wxString::Format(_("%s:%d SObject::ValidateAfterParse:Cannot read file '%s'."),
+        wxString::Format(_("%s:%d SObject::ValidateAfterParse:Invalid number of ports in file '%s'."),
                          __FILE__, __LINE__, snp_file.GetFullPath());
     HandleMessage(mess, be_quiet);
     return false;

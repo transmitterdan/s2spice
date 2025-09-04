@@ -85,9 +85,7 @@ using namespace Eigen;
   }
 #endif
 #else
-#define DEBUG_MESSAGE_BOX(MESS) \
-  {                             \
-  }
+#define DEBUG_MESSAGE_BOX(MESS) { }
 #endif
 
 inline bool HandleMessage(const wxString& mess, bool be_quiet) {
