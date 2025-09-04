@@ -133,20 +133,25 @@ void SObject::InitTargetsAndDefaults(const wxFileName& SFile) {
   lib_file = SFile;
   asy_file = SFile;
   string lib_name = SFile.GetName().ToStdString();
-  replace_if(lib_name.begin(), lib_name.end(), ::isspace, '_'); // keep original behavior
+
+  // Spice does not like spaces in file names
+  replace_if(
+      lib_name.begin(), lib_name.end(),
+      [](char c) { return std::isspace(static_cast<unsigned char>(c)); },
+      '_');  // safe whitespace check
+
   lib_file.SetName(lib_name);
   lib_file.SetExt("inc");
   asy_file.SetName(lib_name);
   asy_file.SetExt("asy");
 
-  // Defaults (match original)
-  inputFormat = "MAG";   // default mag/angle
-  fUnits = 1e9;          // default GHz
+  inputFormat = "MAG";  // default mag/angle
+  fUnits = 1e9;         // default GHz
   parameterType = "S";
-  numPorts = 2;          // default to 2 ports (may be overridden)
+  numPorts = 2;  // default to 2 ports (may be overridden)
   Z0 = 50;
-  Ver = 1.0;             // Assume version 1.0 until found otherwise
-  Swap = true;           // 2-port swap default for V1
+  Ver = 1.0;    // Assume version 1.0 until found otherwise
+  Swap = true;  // 2-port swap default for V1
   comment_strings.Empty();
   option_string.Clear();
   data_strings.clear();
