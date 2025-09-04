@@ -41,6 +41,7 @@ jobs:
         echo "DISPLAY=:99" >> $GITHUB_ENV  # Set DISPLAY for subsequent steps
         echo "NO_AT_BRIDGE=1" >> $GITHUB_ENV    # Turn off accessibility features
       
-    - name: Run s2spice
-      run: ./build/s2spice -q -l -s Test/AD6PS-1+___+25.S7P
+    - name: Run s2spice with a timeout (CLI mode)
+      shell: bash
+      run: timeout 60s ./build/s2spice -q -l -s ./Test/AD6PS-1+___+25.S7P
 
