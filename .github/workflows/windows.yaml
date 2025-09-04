@@ -55,7 +55,13 @@ jobs:
         run: |
           $process = Start-Process -FilePath "$env:GITHUB_WORKSPACE\test_win.bat" -PassThru
           if ($process.WaitForExit(60000)) {
-            Write-Host "Process completed."
+            $exitCode = $process.ExitCode
+            if ($exitCode -eq 0) {
+              Write-Host "Process completed."
+            } else {
+              Write-Host "Process failed."
+              exit 1
+            }
           } else {
             Write-Host "Timeout reached. Killing process."
             $process.Kill()
