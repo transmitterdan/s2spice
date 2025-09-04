@@ -20,7 +20,7 @@ jobs:
         run: |
           brew update
           brew upgrade
-          brew install wxwidgets ninja
+          brew install wxwidgets coreutils
 
       - name: Configure CMake
         run: |
@@ -36,4 +36,4 @@ jobs:
       - name: Run s2spice with a timeout (CLI mode)
         shell: bash
         run: |
-          timeout 60s ./build/s2spice -q -l -s ./Test/AD6PS-1+___+25.TS
+          gtimeout 60s ./build/s2spice -q -l -s ./Test/AD6PS-1+___+25.TS
