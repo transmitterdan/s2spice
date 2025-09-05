@@ -140,7 +140,7 @@ void SObject::InitTargetsAndDefaults(const wxFileName& SFile) {
   // Spice does not like spaces in file names
   replace_if(
       lib_name.begin(), lib_name.end(),
-      [](char c) { return std::isspace(static_cast<unsigned char>(c)); },
+      [](char c) { return std::isspace(static_cast<const char>(c)); },
       '_');  // safe whitespace check
 
   lib_file.SetName(lib_name);
