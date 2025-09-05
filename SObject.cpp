@@ -51,6 +51,7 @@ void SObject::Clean() {
   data_strings.clear();
   comment_strings.clear();
   data_saved = true;
+  error = false;
 }
 
 bool SObject::openSFile(wxWindow* parent) {
@@ -108,11 +109,13 @@ bool SObject::readSFile(wxFileName& SFile) {
     }
     wxTextInputStream text_input(input_stream);
     if (!ParseTouchstone(text_input)) {
+      error = true;
       return false;
     }
   }
 
   if (!ParseOptionsFromHeader()) {
+    error = true;
     return false;
   }
   if (!ValidateAfterParse()) {
@@ -179,9 +182,10 @@ bool SObject::DeterminePortsAndVersionFromExt() {
       // fall through to error
     }
   }
-  wxString mess =
-      wxString::Format(_("%s:%d SObject::DeterminePortsAndVersionFromExt:Cannot read file '%s'."),
-                       __FILE__, __LINE__, snp_file.GetFullPath());
+  wxString mess = wxString::Format(
+      _("%s:%d SObject::DeterminePortsAndVersionFromExt:Cannot determine "
+        "version/port no. in file '%s'."),
+      __FILE__, __LINE__, snp_file.GetFullPath());
   return HandleMessage(mess, be_quiet);
 }
 
@@ -350,9 +354,9 @@ bool SObject::ParseOptionsFromHeader() {
 }
 
 bool SObject::ValidateAfterParse() const {
-  if (numPorts < 1 || numPorts > 90) {
+  if (numPorts < 1 || numPorts > 90 || error) {
     wxString mess =
-        wxString::Format(_("%s:%d SObject::ValidateAfterParse:Invalid number of ports in file '%s'."),
+        wxString::Format(_("%s:%d SObject::ValidateAfterParse:Could not parse file '%s'."),
                          __FILE__, __LINE__, snp_file.GetFullPath());
     HandleMessage(mess, be_quiet);
     return false;
