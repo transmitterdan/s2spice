@@ -117,7 +117,7 @@ Install NSIS Installer: https://sourceforge.net/projects/nsis/files/latest/downl
 
 Install MS Visual Studio 2022 Community edition: https://visualstudio.microsoft.com/vs/community/
 
-Open a "x86 Native Tools Command Prompt for VS 2022" window and create a folder where you want to build s2spice.  In this example, we assume you have created a folder called "C:\myProjects". Then issue these commands
+Open a Visual Studio "Developer Command Prompt for VS 2022" window and create a folder where you want to build s2spice.  In this example, we assume you have created a folder called "C:\myProjects". Then issue these commands
 ```
 c:
 cd \myProjects
