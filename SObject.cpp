@@ -208,7 +208,11 @@ bool SObject::ParseTouchstone(wxTextInputStream& text_input) {
       continue;
     }
     if (line.StartsWith("#")) {
-      option_string = line.MakeUpper();
+      // Guard against malformed option strings with no space after '#'
+      wxString first = line.Left(1);
+      wxString rest = line.Mid(1);
+      rest.MakeUpper();
+      option_string = first + " " + rest;
       if (Ver < 2.0) Trigger = true;
       continue;
     }
