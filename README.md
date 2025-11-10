@@ -10,11 +10,9 @@ Another feature is the ability to create LTspice symbol (.ASY) files making it e
 
 ## Binary installation for Windows
 
-V2.2.0: current release
-https://github.com/transmitterdan/s2spice/releases/download/2.2.0/s2spice-2.2.0-win32.exe
-
-V3.3.0 pre-release
-https://github.com/transmitterdan/s2spice/releases/download/3.0.0/s2spice-3.0.0-win64.exe
+V3.0.2: current release
+[https://github.com/transmitterdan/s2spice/releases/download/2.2.0/s2spice-2.2.0-win32.exe
+](https://github.com/transmitterdan/s2spice/releases/download/3.0.2/s2spice_64bit_windows_installer_V3.0.2.zip)
 
 ### Usage:
 
