@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Keep GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  # Update Eigen submodule only when a new 3.x.x release tag appears
+  - package-ecosystem: "submodules"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "eigen"
+    ignore:
+      # Ignore non-3.x.x tags
+      - dependency-name: "eigen"
+        versions:
+          - "<3.0.0"
+          - ">=4.0.0"
