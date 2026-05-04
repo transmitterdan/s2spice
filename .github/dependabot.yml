@@ -7,7 +7,7 @@ updates:
       interval: "daily"
 
   # Update Eigen submodule only when a new 3.x.x release tag appears
-  - package-ecosystem: "submodules"
+  - package-ecosystem: "gitsubmodule"
     directory: "/"
     schedule:
       interval: "daily"
