@@ -13,7 +13,7 @@ if errorlevel 1 (
 
 echo "APPVEYOR_BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%"
 call "%APPVEYOR_BUILD_FOLDER%\github-windeps.bat"
-
+call "%APPVEYOR_BUILD_FOLDER%\install_latest_cmake.bat"
 cd %APPVEYOR_BUILD_FOLDER%
 cd
 dir
