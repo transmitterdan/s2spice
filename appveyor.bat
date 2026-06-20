@@ -7,8 +7,8 @@ if "%APPVEYOR_BUILD_FOLDER%" == "" (set "APPVEYOR_BUILD_FOLDER=%~dp0..")
 
 where dumpbin.exe >nul 2>&1
 if errorlevel 1 (
-  set "VS_BASE=C:\Program Files\Microsoft Visual Studio\2022"
-  call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars32.bat"
+  set "VS_BASE=C:\Program Files\Microsoft Visual Studio\2026"
+  call "%VS_BASE%\Community\VC\Auxiliary\Build\vcvars64.bat"
 )
 
 echo "APPVEYOR_BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%"
