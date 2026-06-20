@@ -21,6 +21,7 @@ if exist build (rmdir /q /s build)
 mkdir build && cd build
 cd
 dir
+PATH
 cmake --version
 @echo "Configuring:"
 cmake ^
