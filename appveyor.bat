@@ -21,6 +21,7 @@ if exist build (rmdir /q /s build)
 mkdir build && cd build
 cd
 dir
+cmake --version
 @echo "Configuring:"
 cmake ^
     -A x64 -G "Visual Studio 18 2026" ^
