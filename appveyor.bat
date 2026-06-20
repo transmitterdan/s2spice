@@ -39,6 +39,9 @@ cmake --build . --config %CONFIGURATION% --target package
 
 @echo "Deploying to Cloudsmith: %CLOUDSMITH_REPO%"
 7z a -tzip s2spice.zip *.exe
+echo cloudsmith whoami -k "%CLOUDSMITH_API_KEY%"
 cloudsmith whoami -k "%CLOUDSMITH_API_KEY%"
-cloudsmith repos list -k "%CLOUDSMITH_API_KEY%"
+echo cloudsmith repos list -l 200 -k "%CLOUDSMITH_API_KEY%"
+cloudsmith repos list -l 200 -k "%CLOUDSMITH_API_KEY%"
+echo cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip -k "%CLOUDSMITH_API_KEY%" --version "%VERSION_STRING%" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"
 cloudsmith push raw "%CLOUDSMITH_REPO%" s2spice.zip -k "%CLOUDSMITH_API_KEY%" --version "%VERSION_STRING%" --summary "s2spice - S-parameter utility" --description "See: https://github.com/transmitterdan/s2spice"
