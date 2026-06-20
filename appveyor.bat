@@ -22,8 +22,8 @@ mkdir build && cd build
 cd
 dir
 @echo "Configuring:"
-cmake -T v143 ^
-    -A x64 -G "Visual Studio 17 2022" ^
+cmake ^
+    -A x64 -G "Visual Studio 18 2026" ^
     -DwxWidgets_ROOT_DIR=%wxWidgets_ROOT_DIR% ^
     -DwxWidgets_LIB_DIR=%wxWidgets_LIB_DIR% ^
     -DwxWidgets_CONFIGURATION=mswu ^
