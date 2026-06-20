@@ -8,12 +8,15 @@ for /f "tokens=2 delims=:," %%A in ('
 ') do set TAG=%%~A
 
 set TAG=%TAG:"=%
-echo Latest CMake tag: %TAG%
+set TAG=%TAG: =%
+set TAG=%TAG:v=%
+echo Latest CMake tag: "%TAG%"
 
+echo https://github.com/Kitware/CMake/releases/download/v4.3.3/cmake-4.3.3-windows-x86_64.zip
 set CMAKE_ZIP=cmake-%TAG%-windows-x86_64.zip
 set CMAKE_URL=https://github.com/Kitware/CMake/releases/download/%TAG%/%CMAKE_ZIP%
 
-echo Downloading %CMAKE_ZIP%...
+echo Downloading %CMAKE_URL% ...
 curl -L -o %CMAKE_ZIP% %CMAKE_URL%
 
 echo Extracting...
