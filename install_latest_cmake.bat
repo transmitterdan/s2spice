@@ -24,9 +24,7 @@ tar -xf %CMAKE_ZIP%
 
 echo Adding CMake to PATH...
 set CMAKE_DIR=%CD%\cmake-%TAG%-windows-x86_64\bin
-set PATH=%CMAKE_DIR%;%PATH%
+endlocal & set PATH=%CMAKE_DIR%;%PATH%
 
 echo Installed CMake version:
 cmake --version
-
-endlocal
