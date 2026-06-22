@@ -18,10 +18,9 @@ python --version > nul 2>&1 && python -m ensurepip > nul 2>&1
 if errorlevel 1 choco install --no-progress -y python
 python --version
 python -m ensurepip
-python -m pip install --upgrade pip
-python -m pip install -q setuptools wheel
-python -m pip install -q --upgrade cloudsmith-cli
-python -m pip install -q cryptography
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install --upgrade cloudsmith-cli --only-binary=:all:
+python -m pip install cryptography --only-binary=:all:
 
 :: Install 7z if needed
 ::
