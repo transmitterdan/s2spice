@@ -22,6 +22,7 @@ install:
   - git submodule update --init --recursive
 
 build_script:
+  - echo Starting AppVeyor build for %APPVEYOR_REPO_BRANCH%
   - call .\appveyor.bat
 
 artifacts:
